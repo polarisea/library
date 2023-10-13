@@ -7,7 +7,7 @@ import DefaultLayout from "../layouts/default";
 import BookFilter from "../components/bookFilter";
 import BookList from "../components/bookList";
 
-import { fetchMe } from "../slices/authSlice";
+import { fetchMe } from "../slices/auth";
 import { setTab } from "../slices/homeSlice";
 import {
   setBooks,

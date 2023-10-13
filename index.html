@@ -11,9 +11,42 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- <div style="position: fixed;"> -->
+    <!-- <div id="g_id_onload" data-client_id="637790856012-9vmirhlnb303psdjblio0ce4eik96adn.apps.googleusercontent.com"
+        data-context="use" data-ux_mode="popup" data-callback="googleCallback" data-nonce="" data-auto_prompt="false"
+        data-auto_select="false"></div>
+
+    <div class="g_id_signin" data-auto_select="false" data-type="standard" data-shape="rectangular" data-theme="outline"
+        width="100" data-text="signin_with" data-size="large" data-logo_alignment="left"></div> -->
+    <!-- </div> -->
+
 </body>
 
 <script>
+    window.addEventListener('load', () => {
+        const parent = document.getElementById('google_btn');
+        google.accounts.id.initialize({
+            client_id: '637790856012-9vmirhlnb303psdjblio0ce4eik96adn.apps.googleusercontent.com',
+            callback: (value) => { onSuccessLoginByGoogle(value) }
+
+        });
+        google.accounts.id.renderButton(parent, { theme: "filled_blue", width: 400, shape: "circle", string: "", type: "icon", click_listener: (value) => { console.log("CLick: ", value) }, width: "100px" });
+    })
+    function googleCallback(value) {
+        window.onSuccessLoginByGoogle(value)
+    }
+
+    window.onSuccessLoginByGoogle = (value) => {
+        console.log(value)
+    }
+    function loginByGoogle() {
+    }
+
+    function onLogout() {
+        console.log("Logout")
+        google.accounts.id.disableAutoSelect();
+    }
     window.fbAsyncInit = function () {
         FB.init({
             appId: '1831878920610541',
@@ -34,5 +67,7 @@
         fjs.parentNode.insertBefore(js, fjs);
     }(document, 'script', 'facebook-jssdk'));
 </script>
+
+<script src="https://accounts.google.com/gsi/client"></script>
 
 </html>

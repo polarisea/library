@@ -3,14 +3,18 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "../services/api";
 import { ROLE_TYPES } from "../constants";
 
-export const login = createAsyncThunk("auth/login", async (params) => {
-  const { data } = await apiService.get(`auth/login`, {
-    params: {
-      ...params,
-    },
-  });
+export const register = createAsyncThunk("auth/register", async ({ body }) => {
+  const { data } = await apiService.post(`auth/register`, body);
   return data;
 });
+
+export const login = createAsyncThunk(
+  "auth/login",
+  async ({ loginMethod, body }) => {
+    const { data } = await apiService.post(`auth/login/${loginMethod}`, body);
+    return data;
+  },
+);
 
 export const fetchMe = createAsyncThunk("auth/me", async (params) => {
   const { data } = await apiService.get(`auth/me`, {
@@ -42,15 +46,40 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(register.pending, (state) => {
+        state.loading = true;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        const { user, token } = action.payload;
+        apiService.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        if (remember) {
+          localStorage.setItem("token", token);
+        }
+        state.isAdmin = user.role == ROLE_TYPES.admin.value;
+        state.user = user;
+        state.token = token;
+        state.loading = false;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        console.log(action.error.message);
+        state.error = action.payload.errors;
+      });
+
+    builder
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.user = null;
         state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
-        const { user, token } = action.payload;
+        const { user, token, remember } = action.payload;
         apiService.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        localStorage.setItem("token", token);
+        if (remember) {
+          localStorage.setItem("token", token);
+        }
         state.isAdmin = user.role == ROLE_TYPES.admin.value;
         state.user = user;
         state.token = token;
@@ -60,6 +89,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       });
+
     builder
       .addCase(fetchMe.pending, (state) => {
         state.loading = true;
@@ -79,7 +109,6 @@ const authSlice = createSlice({
   },
 });
 
-// Export reducer và actions từ slice
 export const { logout } = authSlice.actions;
 
 export default authSlice;

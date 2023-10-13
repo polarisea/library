@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Avatar, Menu, Button } from "antd";
 import { LogoutOutlined } from "@ant-design/icons";
 
-import { fetchMe, logout } from "../slices/authSlice";
+import { fetchMe, logout } from "../slices/auth";
 
 function getItem(label, key, icon, children, type) {
   return {

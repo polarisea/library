@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-cond-assign */
 /* eslint-disable no-undef */
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
@@ -6,14 +8,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { Button, Avatar, Drawer, Popover, Menu } from "antd";
 import { DashboardOutlined, LogoutOutlined } from "@ant-design/icons";
 import Search from "../components/search";
+import Auth from "../components/auth";
+
 import bg from "../assets/bg.jpg";
-import { login, logout } from "../slices/authSlice";
+
+import { logout } from "../slices/auth";
 
 function DefaultLayout({ children }) {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const [ratio, setRatio] = useState(true);
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   const menuItems = [
     {
@@ -51,21 +57,6 @@ function DefaultLayout({ children }) {
     }
   }, []);
 
-  const onLogin = () => {
-    FB.login(
-      function (response) {
-        if (response.status == "connected") {
-          dispatch(
-            login({
-              fbToken: response.authResponse.accessToken,
-              fbId: response.authResponse.userID,
-            }),
-          );
-        }
-      },
-      { scope: "email,public_profile" },
-    );
-  };
   const showDrawer = () => {
     setOpenDrawer(true);
   };
@@ -82,9 +73,17 @@ function DefaultLayout({ children }) {
             Library
           </a>
           {!user ? (
-            <Button type="link" onClick={onLogin}>
-              Đăng nhập
-            </Button>
+            <>
+              <Button
+                type="link"
+                onClick={() => {
+                  setAuthOpen(true);
+                }}
+              >
+                Đăng nhập
+              </Button>
+              <Auth open={authOpen} setOpen={setAuthOpen}></Auth>
+            </>
           ) : (
             <>
               <div className="max-sm:hidden">
