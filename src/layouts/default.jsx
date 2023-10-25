@@ -1,53 +1,77 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable no-cond-assign */
-/* eslint-disable no-undef */
-/* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Button, Avatar, Drawer, Popover, Menu } from "antd";
-import { DashboardOutlined, LogoutOutlined } from "@ant-design/icons";
+import { Button, Avatar, Popover, Menu } from "antd";
+import {
+  UserOutlined,
+  DashboardOutlined,
+  LogoutOutlined,
+  LockOutlined,
+  ProfileOutlined,
+} from "@ant-design/icons";
+
+import { ROLES } from "../constants";
+
 import Search from "../components/search";
 import Auth from "../components/auth";
+import Profile from "../components/profile";
+import ChangePassword from "../components/changePassword";
 
 import bg from "../assets/bg.jpg";
 
 import { logout } from "../slices/auth";
+import { PICTURE_HOST } from "../constants";
 
 function DefaultLayout({ children }) {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const isAdmin = useSelector((state) => state.auth.isAdmin);
+  const isRoot = useSelector((state) => state.auth.isRoot);
   const [ratio, setRatio] = useState(true);
-  const [openDrawer, setOpenDrawer] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [changePassOpen, setChangePassOpen] = useState(false);
 
-  const menuItems = [
-    {
-      label: (
-        <a
+  const popoverContent = useMemo(() => {
+    return (
+      <Menu>
+        {(isAdmin || isRoot) && (
+          <Menu.Item
+            icon={<DashboardOutlined />}
+            key="dashboard"
+            onClick={() => {}}
+          >
+            <a href="/dashboard">Trang quản trị</a>
+          </Menu.Item>
+        )}
+        <Menu.Item
+          icon={<ProfileOutlined />}
+          onClick={() => {
+            setProfileOpen(true);
+          }}
+        >
+          Hồ sơ của tôi
+        </Menu.Item>
+        <Menu.Item
+          icon={<LockOutlined />}
+          onClick={() => {
+            setChangePassOpen(true);
+          }}
+        >
+          Đổi mật khẩu
+        </Menu.Item>
+        <Menu.Item
+          icon={<LogoutOutlined />}
           onClick={() => {
             dispatch(logout());
           }}
+          danger
         >
           Đăng xuất
-        </a>
-      ),
-      key: "logout",
-      danger: true,
-      icon: <LogoutOutlined />,
-    },
-  ];
-
-  useEffect(() => {
-    if (user && !user.isAdmin)
-      menuItems.unshift({
-        label: <a href="/dashboard">Trang quản trị</a>,
-        key: "dashboard",
-        icon: <DashboardOutlined />,
-      });
-  }, [user]);
-
-  const popoverContent = <Menu items={menuItems}></Menu>;
+        </Menu.Item>
+      </Menu>
+    );
+  }, [isAdmin, isRoot]);
 
   useEffect(() => {
     const bgRatio = 728 / 485;
@@ -56,13 +80,6 @@ function DefaultLayout({ children }) {
       setRatio(false);
     }
   }, []);
-
-  const showDrawer = () => {
-    setOpenDrawer(true);
-  };
-  const onClose = () => {
-    setOpenDrawer(false);
-  };
 
   return (
     <>
@@ -82,44 +99,38 @@ function DefaultLayout({ children }) {
               >
                 Đăng nhập
               </Button>
-              <Auth open={authOpen} setOpen={setAuthOpen}></Auth>
+              <Auth open={authOpen} setOpen={setAuthOpen} />
             </>
           ) : (
             <>
-              <div className="max-sm:hidden">
+              <div className="">
                 <Popover content={popoverContent} placement="bottomRight">
-                  <button className="">
-                    <span className="text-blue-600 mr-1">{user.name}</span>
-                    <Avatar
-                      size="large"
-                      src={user ? user.picture : ""}
-                      style={{
-                        backgroundColor: "blue",
-                      }}
-                    />
+                  <button className="flex items-center">
+                    <span className="font-bold text-white mr-1">
+                      {user.name}
+                    </span>
+                    <span
+                      className="border-[2px] rounded-[10rem] w-[44px] block "
+                      style={{ borderColor: ROLES[user?.role]?.color }}
+                    >
+                      <Avatar
+                        size="large"
+                        src={user ? `${PICTURE_HOST}/${user.picture}` : ""}
+                        icon={<UserOutlined />}
+                      />
+                    </span>
                   </button>
                 </Popover>
               </div>
-              <div className="sm:hidden">
-                <button onClick={showDrawer}>
-                  <span className="text-blue-600 mr-1">{user.name}</span>
-                  <Avatar
-                    size="large"
-                    src={user ? user.picture : ""}
-                    style={{
-                      backgroundColor: "blue",
-                    }}
-                  />
-                </button>
-                <Drawer
-                  placement="right"
-                  onClose={onClose}
-                  open={openDrawer}
-                  bodyStyle={{ padding: "0px" }}
-                >
-                  <Menu items={menuItems}></Menu>
-                </Drawer>
-              </div>
+              <Profile
+                open={profileOpen}
+                setOpen={setProfileOpen}
+                userId={user._id}
+              />
+              <ChangePassword
+                open={changePassOpen}
+                setOpen={setChangePassOpen}
+              />
             </>
           )}
         </div>

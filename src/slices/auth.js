@@ -1,19 +1,33 @@
 /* eslint-disable no-undef */
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "../services/api";
-import { ROLE_TYPES } from "../constants";
+import { ROLES } from "../constants";
 
-export const register = createAsyncThunk("auth/register", async ({ body }) => {
-  const { data } = await apiService.post(`auth/register`, body);
-  return data;
-});
+export const register = createAsyncThunk(
+  "auth/register",
+  async ({ body }, { dispatch }) => {
+    dispatch(authSlice.actions.setLastAction("register"));
+    const { data } = await apiService.post(`auth/register`, body);
+    return data;
+  }
+);
 
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ loginMethod, body }) => {
+  async ({ loginMethod, body }, { dispatch }) => {
+    dispatch(authSlice.actions.setLastAction("login"));
     const { data } = await apiService.post(`auth/login/${loginMethod}`, body);
     return data;
-  },
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (body, { dispatch }) => {
+    dispatch(authSlice.actions.setLastAction("changePassword"));
+    const { data } = await apiService.post(`auth/change-password`, body);
+    return data;
+  }
 );
 
 export const fetchMe = createAsyncThunk("auth/me", async (params) => {
@@ -31,17 +45,25 @@ const authSlice = createSlice({
     user: null,
     token: null,
     isAdmin: false,
+    isRoot: false,
     loading: false,
     error: null,
+    lastAction: null,
   },
   reducers: {
     logout(state) {
-      console.log("Logout");
       state.user = null;
       state.token = null;
       state.isAdmin = null;
+      state.isRoot = null;
       localStorage.removeItem("token");
       apiService.defaults.headers.common["Authorization"] = ``;
+    },
+    setUser(state, action) {
+      state.user = { ...action.payload };
+    },
+    setLastAction(state, action) {
+      state.lastAction = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -52,20 +74,21 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(register.fulfilled, (state, action) => {
-        const { user, token } = action.payload;
+        const { user, token, remember } = action.payload;
         apiService.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         if (remember) {
           localStorage.setItem("token", token);
         }
-        state.isAdmin = user.role == ROLE_TYPES.admin.value;
+        state.isAdmin = user.role == ROLES.admin.value;
+        state.isRoot = user.role == ROLES.root.value;
+
         state.user = user;
         state.token = token;
         state.loading = false;
       })
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
-        console.log(action.error.message);
-        state.error = action.payload.errors;
+        state.error = true;
       });
 
     builder
@@ -80,16 +103,28 @@ const authSlice = createSlice({
         if (remember) {
           localStorage.setItem("token", token);
         }
-        state.isAdmin = user.role == ROLE_TYPES.admin.value;
+        state.isAdmin = user.role == ROLES.admin.value;
+        state.isRoot = user.role == ROLES.root.value;
         state.user = user;
         state.token = token;
         state.loading = false;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = true;
       });
-
+    builder
+      .addCase(changePassword.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.loading = false;
+        state.error = true;
+      });
     builder
       .addCase(fetchMe.pending, (state) => {
         state.loading = true;
@@ -98,17 +133,18 @@ const authSlice = createSlice({
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         const { user } = action.payload;
-        state.isAdmin = user.role == ROLE_TYPES.admin.value;
         state.user = user;
+        state.isAdmin = user.role == ROLES.admin.value;
+        state.isRoot = user.role == ROLES.root.value;
         state.loading = false;
       })
       .addCase(fetchMe.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = true;
       });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setUser, setLastAction } = authSlice.actions;
 
 export default authSlice;

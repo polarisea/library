@@ -1,37 +1,41 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { App, Input, Button, Table, Modal, Popconfirm } from "antd";
-import BookForm from "./bookForm";
+import { App, Input, Button, Table, Modal, Popconfirm, Tag } from "antd";
+import ContractForm from "./contractForm";
 import AddButton from "../addButton";
 
+import { vnDate } from "../../utils/date";
+
 import {
-  setSearch,
   setLastAction,
-  fetchTotal as fetchBookTotal,
-  fetchBooks,
-  deleteBook,
-} from "../../slices/book";
+  fetchTotal as fetchContractTotal,
+  fetchContracts,
+} from "../../slices/contract";
 
-import { DEFAULT_COVER_URL, BOOK_STATUS } from "../../constants";
+import {
+  DEFAULT_COVER_URL,
+  BOOK_STATUS,
+  CONTRACT_STATUS,
+} from "../../constants";
 
-function BookManagement() {
+function ContractManagement() {
   const { notification } = App.useApp();
   const dispatch = useDispatch();
-  const bookTotal = useSelector((state) => state.book.total);
-  const books = useSelector((state) => state.book.books);
-  const loading = useSelector((state) => state.book.loading);
-  const error = useSelector((state) => state.book.error);
-  const lastAction = useSelector((state) => state.book.lastAction);
+  const contractTotal = useSelector((state) => state.contract.total);
+  const contracts = useSelector((state) => state.contract.contracts);
+  const loading = useSelector((state) => state.contract.loading);
+  const error = useSelector((state) => state.contract.error);
+  const lastAction = useSelector((state) => state.contract.lastAction);
 
-  const [data, setData] = useState([]);
   const [editMode, setEditMode] = useState("add");
-  const [selectedBook, setSelectedBook] = useState({});
+  const [selectedContract, setSelectedContract] = useState({});
+
   const [tableParams, setTableParams] = useState({
     pagination: {
       current: 1,
       pageSize: 6,
-      total: bookTotal,
+      total: contractTotal,
     },
   });
 
@@ -41,47 +45,55 @@ function BookManagement() {
   const columns = useMemo(() => {
     return [
       {
-        title: "Ảnh bìa",
-        dataIndex: "cover",
-        key: "cover",
-        render: (item) => (
-          <div className="w-[5rem] h-[7rem]">
-            <img
-              src={item ? item : DEFAULT_COVER_URL}
-              className="h-full"
-              alt=""
-            />
-          </div>
-        ),
+        title: "Độc giả",
+        dataIndex: "user",
+        key: "user",
+        render: (item) => item.name,
       },
       {
-        title: "Tên",
-        dataIndex: "name",
-        key: "name",
-        render: (item) => item,
-      },
-      {
-        title: "Tác giả",
-        dataIndex: "authors",
-        key: "authors",
+        title: "Sách",
+        dataIndex: "books",
+        key: "books",
         render: (item) => {
-          return item.join(", ");
+          return (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {item.map((v, i) => (
+                <span
+                  key={i}
+                  className={`border-[1px] text-[12px] border-gray-200 block px-2 rounded   cursor-pointer `}
+                  style={{
+                    color: BOOK_STATUS[v.status].color,
+                  }}
+                >
+                  {v.name}
+                </span>
+              ))}
+            </div>
+          );
         },
       },
       {
-        title: "Thể loại",
-        dataIndex: "categories",
-        key: "categories",
+        title: "Ngày mượn",
+        dataIndex: "from",
+        key: "from",
         render: (item) => {
-          return item.join(", ");
+          return vnDate(item);
         },
       },
       {
-        title: "Nhà xuất bản",
-        dataIndex: "publishers",
-        key: "publishers",
+        title: "Ngày trả",
+        dataIndex: "to",
+        key: "to",
         render: (item) => {
-          return item.join(", ");
+          return vnDate(item);
+        },
+      },
+      {
+        title: "Ngày trả thực tế",
+        dataIndex: "returnDate",
+        key: "returnDate",
+        render: (item) => {
+          return item && vnDate(item);
         },
       },
       {
@@ -89,27 +101,16 @@ function BookManagement() {
         dataIndex: "status",
         key: "status",
         render: (item) => (
-          <span style={{ color: BOOK_STATUS[item].color }}>
-            {BOOK_STATUS[item].title}
+          <span
+            key={i}
+            className={`border-[1px] text-[12px] border-gray-200 block px-2 rounded   cursor-pointer `}
+            style={{
+              color: CONTRACT_STATUS[item].color,
+            }}
+          >
+            {CONTRACT_STATUS[item].title}
           </span>
         ),
-      },
-      {
-        title: "Lượt mượn",
-        dataIndex: "contracts",
-        key: "contracts",
-      },
-      {
-        title: "Phí trả muộn (ngày)",
-        dataIndex: "lateReturnFine",
-        key: "lateReturnFine",
-        render: (item) => `${item}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
-      },
-      {
-        title: "Phí làm hỏng",
-        dataIndex: "damagedBookFine",
-        key: "damagedBookFine",
-        render: (item) => `${item}`.replace(/\B(?=(\d{3})+(?!\d))/g, ","),
       },
       {
         title: "",
@@ -118,42 +119,26 @@ function BookManagement() {
         width: 175,
         fixed: "right",
         render: (item) => (
-          <div className="flex gap-1">
-            <Button
-              type="primary"
-              onClick={() => {
-                for (const b of books) {
-                  if (b._id == item) setSelectedBook(b);
-                  break;
-                }
-                setEditMode("edit");
-                setModalOpen(true);
-              }}
-            >
-              Cập nhật
-            </Button>
-            <Popconfirm
-              title="Xóa sách"
-              description="Bạn chắc chắc muốn xóa sách này này?"
-              onConfirm={() => {
-                onDelete(item);
-              }}
-              okText="Xác nhận"
-              cancelText="Hủy"
-            >
-              <Button className="ml-2" danger>
-                Xóa
-              </Button>
-            </Popconfirm>
-          </div>
+          <Button
+            type="primary"
+            onClick={() => {
+              openEditMode(item);
+            }}
+          >
+            Trả sách
+          </Button>
         ),
       },
     ];
-  }, []);
+  }, [contracts]);
+
+  const contractData = useMemo(() => {
+    return contracts.map((v, _) => ({ key: v._id, ...v }));
+  }, [contracts]);
 
   useEffect(() => {
-    dispatch(fetchBookTotal());
-    dispatch(fetchBooks());
+    dispatch(fetchContractTotal());
+    dispatch(fetchContracts());
   }, []);
 
   useEffect(() => {
@@ -171,7 +156,7 @@ function BookManagement() {
             description: "Xóa sách thành công",
             placement: "topRight",
           });
-          dispatch(fetchBooks());
+          dispatch(fetchContracts());
         }
         dispatch(setLastAction(null));
       }
@@ -188,7 +173,7 @@ function BookManagement() {
             description: "Thêm sách thành công",
             placement: "topRight",
           });
-          dispatch(fetchBooks());
+          dispatch(fetchContracts());
           setModalOpen(false);
         }
         dispatch(setLastAction(null));
@@ -206,7 +191,7 @@ function BookManagement() {
             description: "Cập nhật sách thành công",
             placement: "topRight",
           });
-          dispatch(fetchBooks());
+          dispatch(fetchContracts());
           setModalOpen(false);
         }
         dispatch(setLastAction(null));
@@ -218,35 +203,40 @@ function BookManagement() {
     setTableParams({
       pagination: {
         ...tableParams.pagination,
-        total: bookTotal,
+        total: contractTotal,
       },
     });
-  }, [bookTotal]);
+  }, [contractTotal]);
 
-  useEffect(() => {
-    setData(books ? books.map((book, index) => ({ ...book, key: index })) : []);
-  }, [books]);
+  function openEditMode(id) {
+    for (const c of contracts) {
+      if (c._id == id) {
+        setSelectedContract(c);
+        break;
+      }
+    }
+
+    setEditMode("edit");
+    setModalOpen(true);
+  }
 
   function handleTableChange(pagination) {
     setTableParams({
       pagination,
     });
-    dispatch(fetchBooks({ page: pagination.current - 1 }));
+    dispatch(fetchContracts({ page: pagination.current - 1 }));
   }
 
   function onSearch() {
     dispatch(setSearch(keyword));
-    dispatch(fetchBookTotal({ search: keyword }));
-    dispatch(fetchBooks({ search: keyword }));
+    dispatch(fetchContractTotal({ search: keyword }));
+    dispatch(fetchContracts({ search: keyword }));
   }
 
-  function onDelete(bookId) {
-    dispatch(deleteBook(bookId));
-  }
   return (
     <>
       <Modal
-        title={editMode == "add" ? "Thêm sách" : "Sửa thông tin"}
+        title={editMode == "add" ? "Mượn sách" : "Trả sách"}
         open={modalOpen}
         confirmLoading={loading}
         onCancel={() => {
@@ -255,10 +245,10 @@ function BookManagement() {
         footer={null}
         destroyOnClose={true}
       >
-        <BookForm
+        <ContractForm
           closeModal={setModalOpen}
           mode={editMode}
-          book={selectedBook}
+          editContract={selectedContract}
         />
       </Modal>
       <div className="p-2  overflow-x-scroll max-lg:w-[100vw]">
@@ -270,12 +260,11 @@ function BookManagement() {
               size="large"
               onPressEnter={onSearch}
               onChange={(value) => setKeyword(value.target.value)}
-              allowClear
             />
           </span>
           <AddButton
             onClick={() => {
-              setSelectedBook({});
+              setSelectedContract({});
               setEditMode("add");
               setModalOpen(true);
             }}
@@ -285,7 +274,7 @@ function BookManagement() {
           bordered
           pagination={tableParams.pagination}
           columns={columns}
-          dataSource={data}
+          dataSource={contractData}
           onChange={handleTableChange}
           loading={loading}
         />
@@ -294,4 +283,4 @@ function BookManagement() {
   );
 }
 
-export default BookManagement;
+export default ContractManagement;

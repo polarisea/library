@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Descriptions, ConfigProvider, Modal } from "antd";
 /* eslint-disable react/prop-types */
 import BookModal from "./bookModal";
-import { DEFAULT_COVER_URL } from "../constants";
+import { DEFAULT_COVER_URL, BOOK_STATUS } from "../constants";
 function Book({ book }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,7 +22,12 @@ function Book({ book }) {
         destroyOnClose={true}
         width="600"
       >
-        <BookModal book={book}></BookModal>
+        <BookModal
+          book={book}
+          closeModal={() => {
+            setIsModalOpen(false);
+          }}
+        ></BookModal>
       </Modal>
       <div
         className="w-full h-[15rem] bg-white p-2 flex mb-2"
@@ -48,25 +53,23 @@ function Book({ book }) {
           >
             <Descriptions column={1} title={book.name}>
               <Descriptions.Item label="Tác giả">
-                {book.authors.reduce(
-                  (t, v) => t + (t.length > 0 ? " - " : "") + v.name,
-                  "",
-                )}
+                {book.authors.join(", ")}
               </Descriptions.Item>
-              <Descriptions.Item label="Thể loại: ">
-                {book.categories.reduce(
-                  (t, v) => t + (t.length > 0 ? " - " : "") + v.title,
-                  "",
-                )}
+              <Descriptions.Item label="Thể loại">
+                {book.categories.join(", ")}
               </Descriptions.Item>
-              <Descriptions.Item label="Đánh giá: ">
-                {book.votes}
+              <Descriptions.Item label="Nhà xuất bản">
+                {book.publishers.join(", ")}
               </Descriptions.Item>
               <Descriptions.Item label="Lượt mượn: ">
                 {book.contracts}
               </Descriptions.Item>
               <Descriptions.Item label="Tình trạng: ">
-                {book.contracts < book.count ? "Sẵn sàng" : `Hết sách`}
+                {
+                  <span style={{ color: BOOK_STATUS[book.status].color }}>
+                    {BOOK_STATUS[book.status].title}
+                  </span>
+                }
               </Descriptions.Item>
             </Descriptions>
           </ConfigProvider>

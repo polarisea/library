@@ -9,18 +9,29 @@ import {
   Button,
   DatePicker,
   Modal,
+  Tag,
   notification,
 } from "antd";
 
 import { vnDate } from "../utils/date";
 import ContractHistory from "./contractHistory";
-import BookVoting from "./bookVoting";
 
-import { requestAppointment } from "../slices/bookSlice";
+import {
+  setSearch,
+  setPublisher,
+  setCategory,
+  setAuthor,
+  fetchBooks,
+  fetchTotal,
+  requestAppointment,
+} from "../slices/book";
+import { BOOK_STATUS, DEFAULT_COVER_URL } from "../constants";
+
+import { setTab } from "../slices/homeSlice";
 
 const { RangePicker } = DatePicker;
 
-function BookModal({ book }) {
+function BookModal({ book, closeModal }) {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.book.loading);
@@ -58,11 +69,6 @@ function BookModal({ book }) {
       key: "createdAt",
       label: "Lịch sử",
       children: <ContractHistory book={book._id} />,
-    },
-    {
-      key: "#",
-      label: "Đánh giá",
-      children: <BookVoting bookId={book._id} />,
     },
   ];
 
@@ -111,13 +117,45 @@ function BookModal({ book }) {
     setTo(null);
   };
 
+  function changeTab(action, { label, value }) {
+    dispatch(setSearch(null));
+    dispatch(setPublisher(null));
+    dispatch(setAuthor(null));
+    dispatch(setCategory(null));
+    dispatch(action);
+    dispatch(setTab("#"));
+    closeModal();
+    scrollTo({
+      top: window.innerWidth * 0.55,
+      behavior: "smooth",
+    });
+    dispatch(
+      fetchBooks({
+        publisher: null,
+        author: null,
+        category: null,
+        search: null,
+        [label]: value,
+      }),
+    );
+    dispatch(
+      fetchTotal({
+        publisher: null,
+        author: null,
+        category: null,
+        search: null,
+        [label]: value,
+      }),
+    );
+  }
+
   return (
     <>
       {contextHolder}
       <div className="w-full  bg-white p-2 flex mb-2 flex-wrap">
         <div className="w-[10rem] h-[15.5rem]">
           <img
-            src="https://localhost:3000/covers/default.jpg"
+            src={book.cover ? book.cover : DEFAULT_COVER_URL}
             className="h-full"
             alt=""
           />
@@ -128,7 +166,7 @@ function BookModal({ book }) {
             theme={{
               components: {
                 Descriptions: {
-                  itemPaddingBottom: 0,
+                  itemPaddingBottom: 5,
                   titleMarginBottom: 0,
                 },
               },
@@ -136,19 +174,59 @@ function BookModal({ book }) {
           >
             <Descriptions column={1} title={book.name}>
               <Descriptions.Item label="Tác giả">
-                {book.authors[0].name}
+                {book.authors.map((v, i) => (
+                  <Tag key={i}>
+                    <button
+                      onClick={() => {
+                        changeTab(setAuthor(v), { label: "author", value: v });
+                      }}
+                    >
+                      {v}
+                    </button>
+                  </Tag>
+                ))}
               </Descriptions.Item>
-              <Descriptions.Item label="Thể loại: ">
-                {book.categories[0].title}
+              <Descriptions.Item label="Thể loại">
+                {book.categories.map((v, i) => (
+                  <Tag key={i}>
+                    <button
+                      onClick={() => {
+                        changeTab(setCategory(v), {
+                          label: "category",
+                          value: v,
+                        });
+                      }}
+                    >
+                      {v}
+                    </button>
+                  </Tag>
+                ))}
               </Descriptions.Item>
-              <Descriptions.Item label="Đánh giá: ">
-                {book.votes}
+              <Descriptions.Item label="Nhà xuất bản">
+                {book.publishers.map((v, i) => (
+                  <Tag key={i}>
+                    <button
+                      onClick={() => {
+                        changeTab(setPublisher(v), {
+                          label: "publisher",
+                          value: v,
+                        });
+                      }}
+                    >
+                      {v}
+                    </button>
+                  </Tag>
+                ))}
               </Descriptions.Item>
               <Descriptions.Item label="Lượt mượn: ">
                 {book.contracts}
               </Descriptions.Item>
               <Descriptions.Item label="Tình trạng: ">
-                {book.contracts < book.count ? "Sẵn sàng" : `Hết sách`}
+                {
+                  <span style={{ color: BOOK_STATUS[book.status].color }}>
+                    {BOOK_STATUS[book.status].title}
+                  </span>
+                }
               </Descriptions.Item>
             </Descriptions>
           </ConfigProvider>

@@ -3,7 +3,14 @@ import { useDispatch } from "react-redux";
 
 import { Input, Button, Space } from "antd";
 
-import { setSearch, fetchBooks, fetchTotal } from "../slices/bookSlice";
+import {
+  setSearch,
+  fetchBooks,
+  fetchTotal,
+  setPublisher,
+  setCategory,
+  setAuthor,
+} from "../slices/book";
 import { setTab } from "../slices/homeSlice";
 
 function Search() {
@@ -11,9 +18,27 @@ function Search() {
   const [keyword, setKeyword] = useState("");
   const onSearch = () => {
     dispatch(setSearch(keyword));
+    setKeyword(null);
+    dispatch(setPublisher(null));
+    dispatch(setAuthor(null));
+    dispatch(setCategory(null));
     dispatch(setTab("#"));
-    dispatch(fetchBooks({ search: keyword }));
-    dispatch(fetchTotal());
+    dispatch(
+      fetchBooks({
+        search: keyword,
+        author: null,
+        category: null,
+        publisher: null,
+      }),
+    );
+    dispatch(
+      fetchTotal({
+        search: keyword,
+        author: null,
+        category: null,
+        publisher: null,
+      }),
+    );
     scrollTo({
       top: window.innerWidth * 0.55,
       behavior: "smooth",

@@ -1,13 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { apiService } from "../services/api";
 
-export const fetchUsers = createAsyncThunk(
-  "user/fetchUsers",
-  async (params, { getState }) => {
-    const { search } = getState().user;
-    const { data } = await apiService.get(`users`, {
+export const fetchPublishers = createAsyncThunk(
+  "publisher/fetchPublishers",
+  async (params) => {
+    const { data } = await apiService.get(`publishers`, {
       params: {
-        search,
         ...params,
       },
     });
@@ -16,12 +14,10 @@ export const fetchUsers = createAsyncThunk(
 );
 
 export const fetchTotal = createAsyncThunk(
-  "user/fetchTotal",
-  async (params, { getState }) => {
-    const { search } = getState().user;
-    const { data } = await apiService.get(`users/count`, {
+  "publisher/fetchTotal",
+  async (params) => {
+    const { data } = await apiService.get(`publishers/count`, {
       params: {
-        search,
         ...params,
       },
     });
@@ -29,32 +25,27 @@ export const fetchTotal = createAsyncThunk(
   },
 );
 
-const userSlice = createSlice({
-  name: "user",
+const publisherSlice = createSlice({
+  name: "publisher",
   initialState: {
-    users: [],
+    publishers: [],
     loading: false,
     error: null,
     total: 0,
-    search: null,
   },
-  reducers: {
-    setSearch(state, action) {
-      state.search = action.payload;
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchUsers.pending, (state) => {
+      .addCase(fetchPublishers.pending, (state) => {
         state.loading = true;
-        state.users = [];
+        state.publishers = [];
         state.error = null;
       })
-      .addCase(fetchUsers.fulfilled, (state, action) => {
+      .addCase(fetchPublishers.fulfilled, (state, action) => {
         state.loading = false;
-        state.users = action.payload;
+        state.publishers = action.payload;
       })
-      .addCase(fetchUsers.rejected, (state, action) => {
+      .addCase(fetchPublishers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
       });
@@ -72,6 +63,6 @@ const userSlice = createSlice({
 });
 
 // Export reducer và actions từ slice
-export const { setSearch } = userSlice.actions;
+// export const { setSearch, setSort } = publisherSlice.actions;
 
-export default userSlice;
+export default publisherSlice;

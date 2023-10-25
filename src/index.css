@@ -17,28 +17,14 @@ html {
     /* @apply bg-gray-200; */
 }
 
-.no-tailwind { 
-    all: unset; 
-}
-
-/* button, [type='button'], [type='reset'], [type='submit'] {
-    -webkit-appearance: button;
-    background-color: inherit;
-    background-image: none;
-}
-
-.ant-btn-primary:disabled{
-    cursor: not-allowed;
-    border-color: #d9d9d9;
-    color: rgba(0, 0, 0, 0.25);
-    background-color: rgba(0, 0, 0, 0.04) !important;
-    box-shadow: none;
-} */
-
 
 .parent-tag-hover:hover  .child-tag-hover {
     display: block !important;
 }
 .child-tag-hover:hover {
     display: block !important;
+}
+
+.animate-left {
+    transition: linear left 0.2s;
 }

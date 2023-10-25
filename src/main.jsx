@@ -1,18 +1,26 @@
 /* eslint-disable no-undef */
-import React from "react";
+import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Provider } from "react-redux";
 import { StyleProvider } from "@ant-design/cssinjs";
-
+import { App, Spin } from "antd";
 import store from "./store";
-import IndexPage from "./pages/index";
-import DashboardPage from "./pages/dashboard";
-import Overview from "./components/dashboard/overview";
-import UserManagement from "./components/dashboard/userManagement";
-import BookManagement from "./components/dashboard/bookManagement";
 
 import "./index.css";
+
+const IndexPage = React.lazy(() => import("./pages/index"));
+const DashboardPage = React.lazy(() => import("./pages/dashboard"));
+const Overview = React.lazy(() => import("./components/dashboard/overview"));
+const UserManagement = React.lazy(() =>
+  import("./components/dashboard/userManagement")
+);
+const BookManagement = React.lazy(() =>
+  import("./components/dashboard/bookManagement")
+);
+const ContractManagement = React.lazy(() =>
+  import("./components/dashboard/contractManagement")
+);
 
 const router = createBrowserRouter([
   {
@@ -26,6 +34,10 @@ const router = createBrowserRouter([
       { path: "/dashboard", element: <Overview /> },
       { path: "/dashboard/user-management", element: <UserManagement /> },
       { path: "/dashboard/book-management", element: <BookManagement /> },
+      {
+        path: "/dashboard/contract-management",
+        element: <ContractManagement />,
+      },
     ],
   },
 ]);
@@ -33,9 +45,19 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Provider store={store}>
-      <StyleProvider hashPriority="high">
-        <RouterProvider router={router}></RouterProvider>
-      </StyleProvider>
+      <App>
+        <StyleProvider hashPriority="high">
+          <Suspense
+            fallback={
+              <div className="w-full min-h-[100vh] flex justify-center items-center">
+                <Spin size="large" />{" "}
+              </div>
+            }
+          >
+            <RouterProvider router={router}></RouterProvider>
+          </Suspense>
+        </StyleProvider>
+      </App>
     </Provider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

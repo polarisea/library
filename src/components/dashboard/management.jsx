@@ -83,8 +83,6 @@ function Management({
         open={open}
         confirmLoading={loading}
         onCancel={handleCancel}
-        okText="Thêm"
-        okType="primary"
         footer={null}
       >
         {AddForm}

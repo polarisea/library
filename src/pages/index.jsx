@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Tabs, ConfigProvider } from "antd";
 
@@ -16,39 +16,39 @@ import {
   setSort,
   fetchBooks,
   fetchTotal,
-} from "../slices/bookSlice";
+} from "../slices/book";
+
+const tabTokens = {
+  cardBg: "rgba(0, 0, 0, 0)",
+  itemSelectedColor: "#66FFC8",
+  titleFontSize: 17,
+  itemColor: "rgba(255,255,255,255)",
+  colorBorder: "rgba(0, 0, 0, 0)",
+  colorBgContainer: "rgba(0,0,0,0)",
+  colorBorderSecondary: "rgba(0,0,0,0)",
+};
+
+const items = [
+  {
+    key: "votes",
+    label: "Mượn nhiều nhất",
+    children: <BookList sort="contracts" />,
+  },
+  {
+    key: "createdAt",
+    label: "Mới nhất",
+    children: <BookList sort="createdAt" />,
+  },
+  {
+    key: "#",
+    label: "Tìm kiếm nâng cao",
+    children: <BookFilter />,
+  },
+];
 
 function Index() {
   const dispatch = useDispatch();
   const tab = useSelector((state) => state.home.tab);
-
-  const tabTokens = {
-    cardBg: "rgba(0, 0, 0, 0)",
-    itemSelectedColor: "#66FFC8",
-    titleFontSize: 17,
-    itemColor: "rgba(255,255,255,255)",
-    colorBorder: "rgba(0, 0, 0, 0)",
-    colorBgContainer: "rgba(0,0,0,0)",
-    colorBorderSecondary: "rgba(0,0,0,0)",
-  };
-
-  const items = [
-    {
-      key: "votes",
-      label: "Hay nhất",
-      children: <BookList sort="votes" />,
-    },
-    {
-      key: "createdAt",
-      label: "Mới nhất",
-      children: <BookList sort="createdAt" />,
-    },
-    {
-      key: "#",
-      label: "Tìm kiếm nâng cao",
-      children: <BookFilter />,
-    },
-  ];
 
   useEffect(() => {
     {
@@ -70,6 +70,7 @@ function Index() {
     dispatch(fetchTotal());
     dispatch(fetchBooks());
   };
+
   return (
     <DefaultLayout>
       <div className="w-[90vw] relative  mt-[-10vw]  bg-[rgba(0,0,0,0.25)] mx-auto rounded-2xl sm:px-10 max-sm:px-2 py-5">

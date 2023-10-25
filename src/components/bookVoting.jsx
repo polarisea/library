@@ -5,7 +5,7 @@ import { Rate, notification } from "antd";
 import { useDispatch, useSelector } from "react-redux";
 
 import { VOTING_VALUES } from "../constants";
-import { vote as requestVote } from "../slices/bookSlice";
+import { vote as requestVote } from "../slices/book";
 
 function BookVoting({ bookId }) {
   const dispatch = useDispatch();

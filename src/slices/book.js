@@ -3,43 +3,80 @@ import { apiService } from "../services/api";
 
 export const fetchBooks = createAsyncThunk(
   "book/fetchBooks",
-  async (params, { getState }) => {
-    const { search, author, category, sort } = getState().book;
+  async (params, { getState, dispatch }) => {
+    dispatch(bookSlice.actions.setLastAction("fetchBooks"));
+
+    const { search, author, category, sort, publisher } = getState().book;
     const { data } = await apiService.get(`books`, {
       params: {
         search,
         author,
         category,
         sort,
+        publisher,
         ...params,
       },
     });
     return data;
-  },
+  }
+);
+
+export const fetchBook = createAsyncThunk(
+  "book/fetchBook",
+  async (bookId, { dispatch }) => {
+    dispatch(bookSlice.actions.setLastAction("fetchBook"));
+
+    const { data } = await apiService.get(`books/${bookId}/get`, {});
+    return data;
+  }
 );
 
 export const fetchTotal = createAsyncThunk(
   "book/fetchTotal",
   async (params, { getState }) => {
-    const { search, author, category } = getState().book;
+    const { search, author, category, publisher } = getState().book;
     const { data } = await apiService.get(`books/count`, {
       params: {
         search,
         author,
         category,
+        publisher,
         ...params,
       },
     });
     return data;
-  },
+  }
 );
 
-export const createBook = createAsyncThunk("book/createBook", async (body) => {
-  const { data } = await apiService.post(`books`, {
-    ...body,
-  });
-  return data;
-});
+export const fetchStatusCount = createAsyncThunk(
+  "book/fetchStatusCount",
+  async () => {
+    const { data } = await apiService.get(`books/status-count`, {});
+    return data;
+  }
+);
+
+export const createBook = createAsyncThunk(
+  "book/createBook",
+  async (body, { dispatch }) => {
+    dispatch(bookSlice.actions.setLastAction("createBook"));
+    const { data } = await apiService.post(`books`, {
+      ...body,
+    });
+    return data;
+  }
+);
+
+export const updateBook = createAsyncThunk(
+  "book/updateBook",
+  async ({ id, body }, { dispatch }) => {
+    dispatch(bookSlice.actions.setLastAction("updateBook"));
+    const { data } = await apiService.patch(`books/${id}/update`, {
+      ...body,
+    });
+    return data;
+  }
+);
 
 export const fetchContractHistory = createAsyncThunk(
   "book/contractHistory",
@@ -50,7 +87,7 @@ export const fetchContractHistory = createAsyncThunk(
       },
     });
     return data;
-  },
+  }
 );
 
 export const fetchTotalContractHistory = createAsyncThunk(
@@ -62,7 +99,7 @@ export const fetchTotalContractHistory = createAsyncThunk(
       },
     });
     return data;
-  },
+  }
 );
 
 export const requestAppointment = createAsyncThunk(
@@ -72,7 +109,7 @@ export const requestAppointment = createAsyncThunk(
       ...body,
     });
     return data;
-  },
+  }
 );
 
 export const vote = createAsyncThunk("book/vote", async (body) => {
@@ -82,23 +119,39 @@ export const vote = createAsyncThunk("book/vote", async (body) => {
   return data;
 });
 
+export const deleteBook = createAsyncThunk(
+  "book/deleteBook",
+  async (bookId, { dispatch }) => {
+    dispatch(bookSlice.actions.setLastAction("deleteBook"));
+    const { data } = await apiService.delete(`books/${bookId}/delete`);
+    return data;
+  }
+);
+
 const bookSlice = createSlice({
   name: "book",
   initialState: {
     books: [],
+    book: null,
     loading: false,
     error: null,
     search: null,
-    author: "",
-    category: "",
+    author: null,
+    category: null,
+    publisher: null,
     total: 0,
+    statusCount: null,
     sort: "votes",
     contractHistory: null,
     totalContractHistory: 0,
+    lastAction: null,
   },
   reducers: {
     setBooks(state) {
       state.books = [];
+    },
+    setLastAction(state, action) {
+      state.lastAction = action.payload;
     },
     setSearch(state, action) {
       state.search = action.payload;
@@ -108,6 +161,9 @@ const bookSlice = createSlice({
     },
     setCategory(state, action) {
       state.category = action.payload;
+    },
+    setPublisher(state, action) {
+      state.publisher = action.payload;
     },
     setTotal(state, action) {
       state.total = action.payload;
@@ -132,6 +188,20 @@ const bookSlice = createSlice({
         state.error = action.error.message;
       });
     builder
+      .addCase(fetchBook.pending, (state) => {
+        state.loading = true;
+        state.book = null;
+        state.error = null;
+      })
+      .addCase(fetchBook.fulfilled, (state, action) => {
+        state.loading = false;
+        state.book = action.payload;
+      })
+      .addCase(fetchBook.rejected, (state) => {
+        state.loading = false;
+        state.error = "Tải thông tin book thất bại";
+      });
+    builder
       .addCase(fetchTotal.pending, (state) => {
         state.error = null;
       })
@@ -139,6 +209,17 @@ const bookSlice = createSlice({
         state.total = action.payload;
       })
       .addCase(fetchTotal.rejected, (state, action) => {
+        state.error = action.error.message;
+      });
+    builder
+      .addCase(fetchStatusCount.pending, (state) => {
+        state.error = null;
+        state.statusCount = null;
+      })
+      .addCase(fetchStatusCount.fulfilled, (state, action) => {
+        state.statusCount = action.payload;
+      })
+      .addCase(fetchStatusCount.rejected, (state, action) => {
         state.error = action.error.message;
       });
     builder
@@ -196,9 +277,33 @@ const bookSlice = createSlice({
       .addCase(createBook.fulfilled, (state) => {
         state.loading = false;
       })
-      .addCase(createBook.rejected, (state, action) => {
+      .addCase(createBook.rejected, (state) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = true;
+      });
+    builder
+      .addCase(updateBook.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateBook.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updateBook.rejected, (state) => {
+        state.loading = false;
+        state.error = true;
+      });
+    builder
+      .addCase(deleteBook.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteBook.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(deleteBook.rejected, (state) => {
+        state.loading = false;
+        state.error = true;
       });
   },
 });
@@ -211,6 +316,8 @@ export const {
   setCategory,
   setTotal,
   setSort,
+  setLastAction,
+  setPublisher,
 } = bookSlice.actions;
 
 export default bookSlice;

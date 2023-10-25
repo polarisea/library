@@ -1,14 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-</head>
+    <title>Thư viện</title>
+  </head>
 
-<body>
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
@@ -20,54 +19,32 @@
     <div class="g_id_signin" data-auto_select="false" data-type="standard" data-shape="rectangular" data-theme="outline"
         width="100" data-text="signin_with" data-size="large" data-logo_alignment="left"></div> -->
     <!-- </div> -->
+  </body>
 
-</body>
-
-<script>
-    window.addEventListener('load', () => {
-        const parent = document.getElementById('google_btn');
-        google.accounts.id.initialize({
-            client_id: '637790856012-9vmirhlnb303psdjblio0ce4eik96adn.apps.googleusercontent.com',
-            callback: (value) => { onSuccessLoginByGoogle(value) }
-
-        });
-        google.accounts.id.renderButton(parent, { theme: "filled_blue", width: 400, shape: "circle", string: "", type: "icon", click_listener: (value) => { console.log("CLick: ", value) }, width: "100px" });
-    })
-    function googleCallback(value) {
-        window.onSuccessLoginByGoogle(value)
-    }
-
-    window.onSuccessLoginByGoogle = (value) => {
-        console.log(value)
-    }
-    function loginByGoogle() {
-    }
-
-    function onLogout() {
-        console.log("Logout")
-        google.accounts.id.disableAutoSelect();
-    }
+  <script>
     window.fbAsyncInit = function () {
-        FB.init({
-            appId: '1831878920610541',
-            cookie: true,
-            xfbml: true,
-            version: 'v18.0'
-        });
+      FB.init({
+        appId: "1831878920610541",
+        cookie: true,
+        xfbml: true,
+        version: "v18.0",
+      });
 
-        FB.AppEvents.logPageView();
-
+      FB.AppEvents.logPageView();
     };
 
     (function (d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) { return; }
-        js = d.createElement(s); js.id = id;
-        js.src = "https://connect.facebook.net/en_US/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-</script>
+      var js,
+        fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {
+        return;
+      }
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    })(document, "script", "facebook-jssdk");
+  </script>
 
-<script src="https://accounts.google.com/gsi/client"></script>
-
+  <script src="https://accounts.google.com/gsi/client"></script>
 </html>

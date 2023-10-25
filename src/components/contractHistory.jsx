@@ -7,7 +7,7 @@ import { Table, Avatar } from "antd";
 import {
   fetchContractHistory,
   fetchTotalContractHistory,
-} from "../slices/bookSlice";
+} from "../slices/book";
 function ContractHistory({ book }) {
   const dispatch = useDispatch();
   const loading = useSelector((state) => state.book.loading);

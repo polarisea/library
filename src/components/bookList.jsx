@@ -4,7 +4,7 @@ import { Pagination, ConfigProvider } from "antd";
 
 import Book from "../components/book";
 
-import { fetchBooks } from "../slices/bookSlice";
+import { fetchBooks } from "../slices/book";
 
 function BookList() {
   const dispatch = useDispatch();
