@@ -5,12 +5,13 @@ import { Pagination, ConfigProvider } from "antd";
 import Book from "../components/book";
 
 import { fetchBooks } from "../slices/book";
+import { useEffect, useState } from "react";
 
 function BookList() {
   const dispatch = useDispatch();
-
   const books = useSelector((state) => state.book.books);
   const total = useSelector((state) => state.book.total);
+  const [page, setPage] = useState(1);
 
   return (
     <>
@@ -29,11 +30,14 @@ function BookList() {
         >
           <Pagination
             className=" mx-auto mt-5 flex justify-center"
-            defaultCurrent={1}
+            current={page}
             total={total}
             pageSize="6"
             showSizeChanger={false}
-            onChange={(page) => dispatch(fetchBooks({ page: page - 1 }))}
+            onChange={(page) => {
+              setPage(page);
+              dispatch(fetchBooks({ page: page - 1 }));
+            }}
           />
         </ConfigProvider>
       </div>

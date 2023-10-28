@@ -40,29 +40,25 @@ export const BOOK_STATUS = {
   },
 };
 
-// requesting: {
-//   title: "Đang yêu cầu",
-//   value: 0,
-// },
-// acepted: {
-//   title: "Chấp thuận",
-//   value: 1,
-// },
-
-export const CONTRACT_STATUS = {
+export const CONTRACTS = {
+  requesting: {
+    title: "Đang yêu cầu",
+    value: 0,
+    color: "blue",
+  },
   pending: {
     title: "Đang hoạt động",
-    value: 0,
+    value: 1,
     color: "green",
   },
   violation: {
     title: "Vi phạm",
-    value: 1,
+    value: 2,
     color: "red",
   },
   finished: {
     title: "Hoàn thành",
-    value: 2,
+    value: 3,
     color: "purple",
   },
 };
@@ -83,9 +79,9 @@ for (const key in BOOK_STATUS) {
   });
 }
 
-for (const key in CONTRACT_STATUS) {
-  Object.defineProperty(CONTRACT_STATUS, CONTRACT_STATUS[key].value, {
-    value: CONTRACT_STATUS[key],
+for (const key in CONTRACTS) {
+  Object.defineProperty(CONTRACTS, CONTRACTS[key].value, {
+    value: CONTRACTS[key],
     enumerable: false,
   });
 }

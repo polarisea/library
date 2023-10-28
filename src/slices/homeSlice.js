@@ -28,7 +28,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const homeSlice = createSlice({
   name: "author",
   initialState: {
-    tab: "votes",
+    tab: "contracts",
     loading: false,
     error: null,
     total: 0,

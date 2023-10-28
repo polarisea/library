@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { App, Modal, Avatar, Button, Form, Input, DatePicker } from "antd";
 import moment from "moment";
@@ -13,6 +13,8 @@ import {
   EditOutlined,
 } from "@ant-design/icons";
 
+import ContractHistory from "./contractHistory";
+
 import { PICTURE_HOST, ROLES } from "../constants";
 
 import { vnDate } from "../utils/date";
@@ -20,10 +22,15 @@ import { setLastAction, updateUser, fetchUser } from "../slices/user";
 import { setUser } from "../slices/auth";
 import UploadImage from "./uploadImage";
 
-function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
+import { setOpen } from "../slices/profile";
+
+function Profile() {
   const { notification } = App.useApp();
   const dispatch = useDispatch();
+  const userId = useSelector((state) => state.profile.userId);
+  const open = useSelector((state) => state.profile.open);
   const user = useSelector((state) => state.user.user);
+  const me = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.user?.loading);
   const error = useSelector((state) => state.user?.error);
   const lastAction = useSelector((state) => state.user.lastAction);
@@ -31,9 +38,13 @@ function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
   const [picture, setPicture] = useState(null);
   const [initialValues, setInitialValues] = useState({});
 
+  const editable = useMemo(() => {
+    return me && userId == me._id;
+  }, [userId]);
+
   useEffect(() => {
     dispatch(fetchUser(userId));
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!loading) {
@@ -57,6 +68,7 @@ function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
   }, [loading]);
 
   useEffect(() => {
+    if (!editable) return;
     setInitialValues({
       ...user,
       DOB: user?.DOB ? moment(user?.DOB) : null,
@@ -83,9 +95,10 @@ function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
   return (
     <Modal
       zIndex={1031}
-      open={isModalOpen}
+      open={open}
       onCancel={() => {
-        setIsModalOpen(false);
+        setIsEdit(false);
+        dispatch(setOpen(false));
       }}
       footer={null}
       destroyOnClose={true}
@@ -167,14 +180,15 @@ function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
           </span>
           <span className="font-semibold">{user?.name}</span>
           <span className="text-gray-400">{user?._id}</span>
-
-          <Button
-            icon={<EditOutlined />}
-            type="text"
-            onClick={() => {
-              setIsEdit(true);
-            }}
-          />
+          {editable && (
+            <Button
+              icon={<EditOutlined />}
+              type="text"
+              onClick={() => {
+                setIsEdit(true);
+              }}
+            />
+          )}
           <div className="grid grid-cols-[auto,1fr] gap-0 mt-5">
             <div className=" px-2">
               <MailFilled />
@@ -192,6 +206,12 @@ function Profile({ userId, open: isModalOpen, setOpen: setIsModalOpen }) {
               <CalendarFilled />
             </div>
             <div className="">{user?.DOB && vnDate(user?.DOB)}</div>
+          </div>
+          <div className=" w-full">
+            <p className="font-semibold w-full border-b border-gray-400">
+              Lịch sử - {user?.contracts} lượt mượn
+            </p>
+            <ContractHistory user={userId} removedColumns={["user"]} />
           </div>
         </div>
       )}

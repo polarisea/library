@@ -44,7 +44,7 @@ function UploadImage({ setImage, shape }) {
         ></Button>
       </span>
 
-      <img src={imageBase64 ? imageBase64 : ""} alt="" className="w-full" />
+      <img src={imageBase64 ? imageBase64 : ""} alt="" className="h-full" />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from "../../slices/user";
 
 import {
+  setBook,
   setLastAction as setBookLastAction,
   fetchBook,
 } from "../../slices/book";
@@ -34,10 +35,9 @@ import {
   fetchContracts,
 } from "../../slices/contract";
 
-import { BOOK_STATUS, CONTRACT_STATUS } from "../../constants";
+import { BOOK_STATUS, CONTRACTS } from "../../constants";
 
 import { vnDate, calculateDayDifference } from "../../utils/date";
-import { moneyFormat } from "../../utils";
 
 const { RangePicker } = DatePicker;
 
@@ -59,16 +59,12 @@ function ContractFrom({ closeModal, mode, editContract }) {
   const contractLastAction = useSelector((state) => state.contract.lastAction);
   const contractError = useSelector((state) => state.contract.error);
 
-  const [selectedBooks, setSelectedBooks] = useState([]);
-  const [bookId, setBookId] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
   const [returnDate, setReturnDate] = useState(null);
   const [returnBookStatus, setReturnBookStatus] = useState({});
-  const [violationCost, setViolationCost] = useState({});
+  const [violationCost, setViolationCost] = useState(0);
 
-  const [violationCostTotal, setViolationCostTotal] = useState(0);
   const [isFinePaid, setIsFinePaid] = useState(false);
 
   const contractStatus = useMemo(() => {
@@ -76,80 +72,37 @@ function ContractFrom({ closeModal, mode, editContract }) {
     const cost = {};
     let differentDay = null;
     if (returnDate) {
-      differentDay = calculateDayDifference(editContract.to, returnDate) + 1;
+      differentDay = calculateDayDifference(editContract.to, returnDate);
+      if (differentDay > 0)
+        total += editContract.book.lateReturnFine * differentDay;
     }
-    for (const k in editContract.books) {
-      const b = editContract.books[k];
-      cost[b._id] = {
-        lateReturnFine: 0,
-        damagedBookFine: 0,
-      };
-      if (returnDate && differentDay > 0) {
-        cost[b._id].lateReturnFine = differentDay * b.lateReturnFine;
-        total += cost[b._id].lateReturnFine;
-      }
+    if (returnBookStatus == 1) {
+      total += editContract.book.damagedBookFine;
+    }
 
-      if (
-        returnBookStatus &&
-        b.status != returnBookStatus[b._id] &&
-        returnBookStatus[b._id] == BOOK_STATUS.broken.value
-      ) {
-        total += b.damagedBookFine;
-        cost[b._id].damagedBookFine = b.damagedBookFine;
-      }
-    }
-    setViolationCost(cost);
-    setViolationCostTotal(total);
-    if (total == 0 && !returnDate) return CONTRACT_STATUS.pending.value;
+    setViolationCost(total);
+    if (total == 0 && !returnDate) return CONTRACTS.pending.value;
     if (returnDate && (total == 0 || isFinePaid)) {
-      return CONTRACT_STATUS.finished.value;
+      return CONTRACTS.finished.value;
     }
-    return CONTRACT_STATUS.violation.value;
+    return CONTRACTS.violation.value;
   }, [returnDate, returnBookStatus, isFinePaid]);
 
   useEffect(() => {
-    if (!contractLoading) {
-      if (contractLastAction == "updateContract") {
-        if (contractError) {
-          notification.error({
-            message: "Thông báo",
-            description: "Trả sách thất bại",
-            placement: "topRight",
-          });
-          return;
-        }
-        notification.success({
-          message: "Thông báo",
-          description: "Trả sách thành công",
-          placement: "topRight",
-        });
-        dispatch(setContractLastAction(null));
-        dispatch(fetchContracts());
-        closeModal();
-      }
-    }
-  }, [contractLoading]);
+    dispatch(setUser());
+    dispatch(setBook());
+  }, []);
 
   useEffect(() => {
     if (mode == "edit") {
-      setReturnDate(editContract.returnDate);
       if (Object.keys(editContract).length > 0) {
-        const violationCost = {};
-
-        for (const k in editContract.returnBookStatus) {
-          violationCost[k] = {
-            lateReturnFine: 0,
-            damagedBookFine: 0,
-          };
-        }
+        setReturnDate(editContract.returnDate);
         setReturnBookStatus(editContract.returnBookStatus);
-        setViolationCost(violationCost);
+        setViolationCost(editContract.violationCost);
+        setIsFinePaid(editContract.isFinePaid);
       }
-      setIsFinePaid(editContract.isFinePaid);
-      return;
     }
     dispatch(setUser(null));
-    setSelectedBooks([]);
   }, [editContract]);
 
   useEffect(() => {
@@ -209,34 +162,17 @@ function ContractFrom({ closeModal, mode, editContract }) {
   useEffect(() => {
     if (!bookError && mode == "add") {
       if (book) {
-        if (book.borrowedBook != 0) {
+        if (book.count <= book.borrowedCount) {
+          dispatch(setBook(null));
           notification.error({
             message: "Thông báo",
             description: "Sách không tồn tại hoặc đã cho mượn",
             placement: "topRight",
           });
-          return;
         }
-        setSelectedBooks([
-          ...selectedBooks,
-          {
-            _id: book?._id,
-            name: book?.name,
-            status: book?.status,
-            lateReturnFine: book?.lateReturnFine,
-            damagedBookFine: book?.damagedBookFine,
-          },
-        ]);
-
-        setBookId(null);
-        return;
       }
     }
   }, [book]);
-
-  const bookTags = useMemo(() => {
-    return selectedBooks;
-  }, [selectedBooks]);
 
   function onSearchUser(e) {
     e.preventDefault();
@@ -245,17 +181,9 @@ function ContractFrom({ closeModal, mode, editContract }) {
 
   function onSearchBook(e) {
     e.preventDefault();
-    if (selectedBooks.every((v) => v._id != e.target.value)) {
-      dispatch(fetchBook(e.target.value));
-      return;
-    } else {
-      notification.error({
-        message: "Thông báo",
-        description: "Sách đã được thêm",
-        placement: "topRight",
-      });
-    }
+    dispatch(fetchBook(e.target.value));
   }
+
   function onTimeChange(value) {
     if (value) {
       const from = new Date(value[0].$d).toISOString();
@@ -269,11 +197,8 @@ function ContractFrom({ closeModal, mode, editContract }) {
     setTo(null);
   }
 
-  function removeBook(id) {
-    setSelectedBooks(selectedBooks.filter((v) => v._id != id));
-  }
-
   function onSubmit() {
+    console.log("On submit: ", user, book);
     if (!user) {
       notification.error({
         message: "Thông báo",
@@ -282,7 +207,7 @@ function ContractFrom({ closeModal, mode, editContract }) {
       });
       return;
     }
-    if (selectedBooks.length == 0) {
+    if (!book) {
       notification.error({
         message: "Thông báo",
         description: "Vui lòng chọn sách",
@@ -301,10 +226,12 @@ function ContractFrom({ closeModal, mode, editContract }) {
 
     dispatch(
       createContract({
-        user: userId,
-        books: selectedBooks,
+        user: user._id,
+        book: book._id,
         from,
         to,
+        status: CONTRACTS.pending.value,
+        indexedContent: `${user.name} ${book.name}`,
       })
     );
   }
@@ -315,10 +242,6 @@ function ContractFrom({ closeModal, mode, editContract }) {
       return;
     }
     setReturnDate(null);
-  }
-
-  function onBookStatusChange({ bookId, value }) {
-    setReturnBookStatus({ ...returnBookStatus, [bookId]: value });
   }
 
   function onSubmitEdit(value) {
@@ -344,44 +267,19 @@ function ContractFrom({ closeModal, mode, editContract }) {
         <Form onFinish={onSubmit}>
           <Form.Item name="user" label="Độc giả">
             <>
-              <Input
-                onPressEnter={onSearchUser}
-                allowClear
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-              />
+              <Input onPressEnter={onSearchUser} allowClear />
               <span className="text-green-600">{user?.name}</span>
               {userLoading && <LoadingOutlined />}
             </>
           </Form.Item>
           <Form.Item name="books" label="Sách">
-            <Input
-              onPressEnter={onSearchBook}
-              allowClear
-              value={bookId}
-              onChange={(e) => setBookId(e.target.value)}
-            />
-            <div className="mt-1 flex flex-wrap gap-1">
-              {bookTags?.map((v, i) => (
-                <span
-                  key={i}
-                  onClick={() => {
-                    removeBook(v._id);
-                  }}
-                  className={`border-[1px] text-[12px] border-gray-200 block px-2 rounded   cursor-pointer hover:bg-red-400 hover:text-white  `}
-                  style={{
-                    color: BOOK_STATUS[v.status].color,
-                  }}
-                >
-                  {v.name}
-                </span>
-              ))}
-              {bookLoading && <LoadingOutlined />}
-            </div>
+            <Input onPressEnter={onSearchBook} allowClear />
+            <span className="text-green-600">{book?.name}</span>
+            {bookLoading && <LoadingOutlined />}
           </Form.Item>
 
           <Form.Item name="rangeTime" label="Thời gian mượn">
-            <RangePicker format={vnDate} onChange={onTimeChange} />
+            <RangePicker format={vnDate} onChange={onTimeChange} showTime />
           </Form.Item>
 
           <Form.Item>
@@ -405,7 +303,7 @@ function ContractFrom({ closeModal, mode, editContract }) {
           theme={{
             components: {
               Form: {
-                itemMarginBottom: 0,
+                itemMarginBottom: 2,
               },
             },
           }}
@@ -421,6 +319,9 @@ function ContractFrom({ closeModal, mode, editContract }) {
             <Form.Item label="Độc giả">
               <span className="font-semibold">{editContract?.user?.name}</span>
             </Form.Item>
+            <Form.Item label="Sách">
+              <span className="font-semibold">{editContract?.book?.name}</span>
+            </Form.Item>
             <Form.Item label="Ngày mượn">
               <span className="font-semibold">{vnDate(editContract.from)}</span>
             </Form.Item>
@@ -430,57 +331,33 @@ function ContractFrom({ closeModal, mode, editContract }) {
             <Form.Item label="Ngày trả thực tế" name="returnDate">
               <DatePicker format={"DD/MM/YYYY"} onChange={onDateChange} />
             </Form.Item>
+            <Form.Item label="Tình trạng sách" name="status" className="mt-1">
+              <Select
+                defaultValue={0}
+                value={returnBookStatus}
+                onChange={(e) => {
+                  setReturnBookStatus(e);
+                }}
+                options={[
+                  { label: "Bình thường", value: 0 },
+                  { label: "Hỏng", value: 1 },
+                ]}
+              />
+            </Form.Item>
             <Form.Item label="Tình trạng" name="status">
               <span
                 className="font-semibold"
-                style={{ color: CONTRACT_STATUS[contractStatus].color }}
+                style={{ color: CONTRACTS[contractStatus].color }}
               >
-                {CONTRACT_STATUS[contractStatus]?.title}
+                {CONTRACTS[contractStatus]?.title}
               </span>
             </Form.Item>
-            <Form.Item label="Sách" name="books">
-              <div>
-                {editContract?.books?.map((v, i) => (
-                  <span key={i}>
-                    <p>
-                      <span style={{ color: BOOK_STATUS[v.status].color }}>
-                        {v.name}
-                      </span>
-                      <span>
-                        {" "}
-                        (Chậm:{" "}
-                        {moneyFormat(violationCost[v._id]?.lateReturnFine)} -
-                        Hỏng:{" "}
-                        {moneyFormat(violationCost[v._id]?.damagedBookFine)})
-                      </span>
-                    </p>
-                    <Select
-                      defaultValue={editContract.returnBookStatus[v._id]}
-                      options={Object.values(BOOK_STATUS).reduce((s, _v) => {
-                        if (_v.value >= v.status) {
-                          s.push({
-                            label: _v.title,
-                            value: _v.value,
-                          });
-                        }
-                        return s;
-                      }, [])}
-                      onChange={(value) =>
-                        onBookStatusChange({ bookId: v._id, value })
-                      }
-                    />
-                  </span>
-                ))}
-              </div>
-            </Form.Item>
-            {contractStatus >= CONTRACT_STATUS.violation.value && (
+
+            {contractStatus >= CONTRACTS.violation.value && (
               <>
                 <Form.Item label="Phí phạt">
                   <span>
-                    {`${violationCostTotal}`.replace(
-                      /\B(?=(\d{3})+(?!\d))/g,
-                      ","
-                    )}
+                    {`${violationCost}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </span>
                 </Form.Item>
                 <Form.Item name="isFinePaid">

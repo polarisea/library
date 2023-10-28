@@ -1,23 +1,34 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { App, Input, Button, Table, Modal, Popconfirm, Tag } from "antd";
+import {
+  App,
+  Select,
+  Input,
+  Button,
+  Table,
+  Modal,
+  Popconfirm,
+  Tag,
+} from "antd";
 import ContractForm from "./contractForm";
 import AddButton from "../addButton";
 
 import { vnDate } from "../../utils/date";
-
+import { moneyFormat } from "../../utils";
 import {
   setLastAction,
   fetchTotal as fetchContractTotal,
+  updateContract,
   fetchContracts,
 } from "../../slices/contract";
 
-import {
-  DEFAULT_COVER_URL,
-  BOOK_STATUS,
-  CONTRACT_STATUS,
-} from "../../constants";
+import { DEFAULT_COVER_URL, BOOK_STATUS, CONTRACTS } from "../../constants";
+
+const statusOptions = Object.values(CONTRACTS).map((item) => ({
+  label: item.title,
+  value: item.value,
+}));
 
 function ContractManagement() {
   const { notification } = App.useApp();
@@ -36,11 +47,13 @@ function ContractManagement() {
       current: 1,
       pageSize: 6,
       total: contractTotal,
+      simple: true,
     },
   });
 
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [status, setStatus] = useState();
 
   const columns = useMemo(() => {
     return [
@@ -52,25 +65,9 @@ function ContractManagement() {
       },
       {
         title: "Sách",
-        dataIndex: "books",
-        key: "books",
-        render: (item) => {
-          return (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {item.map((v, i) => (
-                <span
-                  key={i}
-                  className={`border-[1px] text-[12px] border-gray-200 block px-2 rounded   cursor-pointer `}
-                  style={{
-                    color: BOOK_STATUS[v.status].color,
-                  }}
-                >
-                  {v.name}
-                </span>
-              ))}
-            </div>
-          );
-        },
+        dataIndex: "book",
+        key: "book",
+        render: (item) => item?.name || "Đã bị xóa",
       },
       {
         title: "Ngày mượn",
@@ -103,14 +100,19 @@ function ContractManagement() {
         render: (item) => (
           <span
             key={i}
-            className={`border-[1px] text-[12px] border-gray-200 block px-2 rounded   cursor-pointer `}
             style={{
-              color: CONTRACT_STATUS[item].color,
+              color: CONTRACTS[item].color,
             }}
           >
-            {CONTRACT_STATUS[item].title}
+            {CONTRACTS[item].title}
           </span>
         ),
+      },
+      {
+        title: "Phí phạt",
+        dataIndex: "violationCost",
+        key: "violationCost",
+        render: (item) => moneyFormat(item),
       },
       {
         title: "",
@@ -118,16 +120,36 @@ function ContractManagement() {
         key: "_id",
         width: 175,
         fixed: "right",
-        render: (item) => (
-          <Button
-            type="primary"
-            onClick={() => {
-              openEditMode(item);
-            }}
-          >
-            Trả sách
-          </Button>
-        ),
+        render: (item) => {
+          let isRequesting = false;
+          for (const c of contracts) {
+            if (c._id == item) {
+              if (c.status == CONTRACTS.requesting.value) {
+                isRequesting = true;
+                break;
+              }
+            }
+          }
+          return (
+            <Button
+              type="primary"
+              onClick={() => {
+                if (isRequesting) {
+                  dispatch(
+                    updateContract({
+                      id: item,
+                      body: { status: CONTRACTS.pending.value },
+                    })
+                  );
+                } else {
+                  openEditMode(item);
+                }
+              }}
+            >
+              {isRequesting ? "Chấp thuận" : "Trả sách"}
+            </Button>
+          );
+        },
       },
     ];
   }, [contracts]);
@@ -143,58 +165,23 @@ function ContractManagement() {
 
   useEffect(() => {
     if (!loading) {
-      if (lastAction == "deleteBook") {
-        if (error) {
-          notification.error({
-            message: "Thông báo",
-            description: "Xóa sách thất bại",
-            placement: "topRight",
-          });
-        } else {
-          notification.success({
-            message: "Thông báo",
-            description: "Xóa sách thành công",
-            placement: "topRight",
-          });
-          dispatch(fetchContracts());
-        }
+      if (lastAction == "updateContract") {
         dispatch(setLastAction(null));
-      }
-      if (lastAction == "createBook") {
         if (error) {
           notification.error({
             message: "Thông báo",
-            description: "Thêm sách thất bại",
+            description: "Cập nhật hợp đồng thất bại",
             placement: "topRight",
           });
         } else {
           notification.success({
             message: "Thông báo",
-            description: "Thêm sách thành công",
+            description: "Cập nhật hợp đồng thành công",
             placement: "topRight",
           });
           dispatch(fetchContracts());
           setModalOpen(false);
         }
-        dispatch(setLastAction(null));
-      }
-      if (lastAction == "updateBook") {
-        if (error) {
-          notification.error({
-            message: "Thông báo",
-            description: "Cập nhật sách thất bại",
-            placement: "topRight",
-          });
-        } else {
-          notification.success({
-            message: "Thông báo",
-            description: "Cập nhật sách thành công",
-            placement: "topRight",
-          });
-          dispatch(fetchContracts());
-          setModalOpen(false);
-        }
-        dispatch(setLastAction(null));
       }
     }
   }, [loading]);
@@ -224,13 +211,14 @@ function ContractManagement() {
     setTableParams({
       pagination,
     });
-    dispatch(fetchContracts({ page: pagination.current - 1 }));
+    dispatch(
+      fetchContracts({ page: pagination.current - 1, search: keyword, status })
+    );
   }
 
-  function onSearch() {
-    dispatch(setSearch(keyword));
-    dispatch(fetchContractTotal({ search: keyword }));
-    dispatch(fetchContracts({ search: keyword }));
+  function onFilter(overwrite) {
+    dispatch(fetchContractTotal({ search: keyword, status, ...overwrite }));
+    dispatch(fetchContracts({ search: keyword, status, ...overwrite }));
   }
 
   return (
@@ -252,14 +240,28 @@ function ContractManagement() {
         />
       </Modal>
       <div className="p-2  overflow-x-scroll max-lg:w-[100vw]">
-        <div className="flex justify-between  mb-2 w-full ">
-          <span className="w-[20rem]">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={keyword}
+        <div className="flex  justify-between   mb-2 w-full flex-wrap gap-1">
+          <span className="flex justify-start gap-2 max-lg:w-full  flex-wrap">
+            <span className="w-[20rem] max-lg:w-[95%]">
+              <Input
+                placeholder="Tìm kiếm..."
+                value={keyword}
+                size="large"
+                onPressEnter={(e) => onFilter({ search: e.target.value })}
+                onChange={(value) => setKeyword(value.target.value)}
+              />
+            </span>
+            <Select
               size="large"
-              onPressEnter={onSearch}
-              onChange={(value) => setKeyword(value.target.value)}
+              value={status}
+              options={statusOptions}
+              allowClear
+              className="w-[20rem] max-lg:w-[95%]"
+              placeholder="Tình trạng"
+              onChange={(value) => {
+                setStatus(value);
+                onFilter({ status: value });
+              }}
             />
           </span>
           <AddButton

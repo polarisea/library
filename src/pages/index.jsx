@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Tabs, ConfigProvider } from "antd";
 
@@ -9,6 +9,7 @@ import BookList from "../components/bookList";
 
 import { fetchMe } from "../slices/auth";
 import { setTab } from "../slices/homeSlice";
+
 import {
   setBooks,
   setSearch,
@@ -20,9 +21,9 @@ import {
 
 const tabTokens = {
   cardBg: "rgba(0, 0, 0, 0)",
-  itemSelectedColor: "#66FFC8",
+  // itemSelectedColor: "#66FFC8",
   titleFontSize: 17,
-  itemColor: "rgba(255,255,255,255)",
+  // itemColor: "rgba(255,255,255,255)",
   colorBorder: "rgba(0, 0, 0, 0)",
   colorBgContainer: "rgba(0,0,0,0)",
   colorBorderSecondary: "rgba(0,0,0,0)",
@@ -30,14 +31,14 @@ const tabTokens = {
 
 const items = [
   {
-    key: "votes",
+    key: "contracts",
     label: "Mượn nhiều nhất",
-    children: <BookList sort="contracts" />,
+    children: <BookList />,
   },
   {
     key: "createdAt",
     label: "Mới nhất",
-    children: <BookList sort="createdAt" />,
+    children: <BookList />,
   },
   {
     key: "#",
@@ -51,29 +52,43 @@ function Index() {
   const tab = useSelector((state) => state.home.tab);
 
   useEffect(() => {
-    {
-      dispatch(fetchMe());
-      dispatch(fetchTotal());
-      dispatch(fetchBooks());
-    }
+    dispatch(fetchMe());
+    dispatch(fetchTotal());
+    dispatch(fetchBooks());
   }, []);
 
   const onTabChange = async (value) => {
     dispatch(setTab(value));
     dispatch(setSort(value));
-    dispatch(setSearch(""));
+    dispatch(setSearch(null));
+
     if (value == "#") {
       dispatch(setTotal(0));
       dispatch(setBooks());
       return;
     }
-    dispatch(fetchTotal());
-    dispatch(fetchBooks());
+    dispatch(
+      fetchTotal({
+        search: null,
+        author: null,
+        category: null,
+        publisher: null,
+      })
+    );
+    dispatch(
+      fetchBooks({
+        search: null,
+        author: null,
+        category: null,
+        publisher: null,
+        sort: value,
+      })
+    );
   };
 
   return (
     <DefaultLayout>
-      <div className="w-[90vw] relative  mt-[-10vw]  bg-[rgba(0,0,0,0.25)] mx-auto rounded-2xl sm:px-10 max-sm:px-2 py-5">
+      <div className="w-[90vw] max-lg:w-[95vw] relative     mx-auto rounded-2xl lg:px-10 max-lg:px-2 py-5">
         <div className="">
           <ConfigProvider
             theme={{
@@ -92,6 +107,7 @@ function Index() {
                 marginBottom: 0,
               }}
               onChange={onTabChange}
+              destroyInactiveTabPane={true}
             ></Tabs>
           </ConfigProvider>
         </div>

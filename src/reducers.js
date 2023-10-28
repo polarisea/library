@@ -8,6 +8,7 @@ import contract from "./slices/contract";
 import user from "./slices/user";
 import publisher from "./slices/publisher";
 import chart from "./slices/chart";
+import profile from "./slices/profile";
 
 const rootReducer = combineReducers({
   home: homeSlice.reducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   user: user.reducer,
   publisher: publisher.reducer,
   chart: chart.reducer,
+  profile: profile.reducer,
 });
 
 export default rootReducer;

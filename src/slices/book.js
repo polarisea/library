@@ -141,7 +141,7 @@ const bookSlice = createSlice({
     publisher: null,
     total: 0,
     statusCount: null,
-    sort: "votes",
+    sort: "contracts",
     contractHistory: null,
     totalContractHistory: 0,
     lastAction: null,
@@ -149,6 +149,9 @@ const bookSlice = createSlice({
   reducers: {
     setBooks(state) {
       state.books = [];
+    },
+    setBook(state, action) {
+      state.book = action.payload;
     },
     setLastAction(state, action) {
       state.lastAction = action.payload;
@@ -171,6 +174,12 @@ const bookSlice = createSlice({
     setSort(state, action) {
       state.sort = action.payload;
     },
+    resetParams(state, action) {
+      state.search = null;
+      state.category = null;
+      state.author = null;
+      state.publisher = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -181,6 +190,9 @@ const bookSlice = createSlice({
       })
       .addCase(fetchBooks.fulfilled, (state, action) => {
         state.loading = false;
+        for (const item of action.payload) {
+          item.stockCount = item.count - item.borrowedCount;
+        }
         state.books = action.payload;
       })
       .addCase(fetchBooks.rejected, (state, action) => {
@@ -195,6 +207,8 @@ const bookSlice = createSlice({
       })
       .addCase(fetchBook.fulfilled, (state, action) => {
         state.loading = false;
+        action.payload.stockCount =
+          action.payload.count - action.payload.borrowedCount;
         state.book = action.payload;
       })
       .addCase(fetchBook.rejected, (state) => {
@@ -311,6 +325,7 @@ const bookSlice = createSlice({
 // Export reducer và actions từ slice
 export const {
   setBooks,
+  setBook,
   setSearch,
   setAuthor,
   setCategory,
@@ -318,6 +333,7 @@ export const {
   setSort,
   setLastAction,
   setPublisher,
+  resetParams,
 } = bookSlice.actions;
 
 export default bookSlice;

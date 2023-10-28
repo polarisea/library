@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Descriptions, ConfigProvider, Modal } from "antd";
-/* eslint-disable react/prop-types */
+import {
+  EditOutlined,
+  TagsOutlined,
+  HomeOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import BookModal from "./bookModal";
 import { DEFAULT_COVER_URL, BOOK_STATUS } from "../constants";
 function Book({ book }) {
@@ -30,18 +35,42 @@ function Book({ book }) {
         ></BookModal>
       </Modal>
       <div
-        className="w-full h-[15rem] bg-white p-2 flex mb-2"
+        className="w-full h-[15rem] bg-white shadow-lg p-2 flex mb-5"
         onClick={showModal}
       >
-        <div className="w-[10rem] h-[14rem]">
+        <div className="w-[10rem] h-[14rem]    relative">
           <img
             src={book.cover ? book.cover : DEFAULT_COVER_URL}
-            className="h-full"
+            className="h-full w-full"
             alt=""
           />
+          <span
+            className="absolute w-full  text-center font-semibold text-[1rem] bottom-0 text-white"
+            style={{
+              backgroundColor:
+                book.borrowedCount < book.count ? "green" : "red",
+            }}
+          >
+            {book.borrowedCount < book.count ? "Sẵn sàng" : "Hết sách"}
+          </span>
         </div>
-        <div className="flex  flex-1 flex-col px-2 ">
-          <ConfigProvider
+        <div className="flex  flex-1 flex-col px-2 text-[1rem]">
+          <p className="font-bold text-[1.25rem]">{book.name}</p>
+          <p>
+            <EditOutlined /> &nbsp; <span>{book.authors.join(", ")}</span>
+          </p>
+          <p>
+            <TagsOutlined /> &nbsp; <span>{book.categories.join(", ")}</span>
+          </p>
+          <p>
+            <HomeOutlined /> &nbsp;
+            <span>{book.publishers.join(", ")}</span>
+          </p>
+          <p>
+            <EyeOutlined /> &nbsp;
+            <span>{book.contracts}</span>
+          </p>
+          {/* <ConfigProvider
             theme={{
               components: {
                 Descriptions: {
@@ -64,15 +93,12 @@ function Book({ book }) {
               <Descriptions.Item label="Lượt mượn: ">
                 {book.contracts}
               </Descriptions.Item>
+
               <Descriptions.Item label="Tình trạng: ">
-                {
-                  <span style={{ color: BOOK_STATUS[book.status].color }}>
-                    {BOOK_STATUS[book.status].title}
-                  </span>
-                }
+                {book.borrowedCount < book.count ? "Sẵn sàng" : "Hết sách"}
               </Descriptions.Item>
             </Descriptions>
-          </ConfigProvider>
+          </ConfigProvider> */}
         </div>
       </div>
     </>

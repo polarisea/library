@@ -144,18 +144,15 @@ function AddBookFrom({ closeModal, mode, book }) {
         </Form.Item>
 
         <Form.Item
-          name="status"
-          label="Tình trạng"
-          rules={[{ required: true, message: "Vui lòng chọn tình trạng" }]}
+          name="count"
+          label="Số lượng"
+          rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
         >
-          <Select
-            allowClear
+          <InputNumber
+            min={1}
             style={{
               width: "100%",
             }}
-            options={statusOptions}
-            placeholder="Chọn tình trạng của sách"
-            virtual={false}
           />
         </Form.Item>
         <Form.Item name="lateReturnFine" label="Phí trả muộn (ngày)">
@@ -196,7 +193,7 @@ function AddBookFrom({ closeModal, mode, book }) {
               Hủy
             </Button>
             <Button type="primary" htmlType="submit" loading={loading}>
-              Thêm sách
+              {mode == "add" ? "Thêm sách" : "Cập nhật"}
             </Button>
           </div>
         </Form.Item>

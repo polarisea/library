@@ -1,78 +1,113 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Table, Avatar } from "antd";
 
-import {
-  fetchContractHistory,
-  fetchTotalContractHistory,
-} from "../slices/book";
-function ContractHistory({ book }) {
+import { fetchContracts, fetchTotal } from "../slices/contract";
+import { CONTRACTS } from "../constants";
+import { vnDate } from "../utils/date";
+
+import { setUserId, setOpen } from "../slices/profile";
+
+function ContractHistory({ book, user, removedColumns }) {
   const dispatch = useDispatch();
-  const loading = useSelector((state) => state.book.loading);
-  const contractHistory = useSelector((state) => state.book.contractHistory);
-  const totalContractHistory = useSelector(
-    (state) => state.book.totalContractHistory,
-  );
+  const contracts = useSelector((state) => state.contract.contracts);
+  const total = useSelector((state) => state.contract.total);
+  const loading = useSelector((state) => state.contract.loading);
+  const error = useSelector((state) => state.contract.error);
+  const lastAction = useSelector((state) => state.contract.lastAction);
+
   const [tableParams, setTableParams] = useState({
     pagination: {
       current: 1,
       pageSize: 6,
-      total: totalContractHistory,
+      total,
       showSizeChanger: false,
+      simple: true,
     },
   });
 
-  const columns = [
-    {
-      title: "Tên sách",
-      dataIndex: "book",
-      key: "book",
-      render: (item) => <a>{item.name}</a>,
-    },
-    {
-      title: "Người mượn",
-      dataIndex: "user",
-      key: "user",
-      render: (item) => (
-        <button className="">
-          <Avatar size="default" src={item ? item.picture : ""} />
-          <span className="text-gray-600 ml-2">{item.name}</span>
-        </button>
-      ),
-    },
-  ];
-  const data = contractHistory
-    ? contractHistory.map((contract, index) => ({
-        key: index,
-        book: contract.book,
-        user: contract.user,
-      }))
-    : [];
+  const columns = useMemo(() => {
+    if (removedColumns) {
+      return [
+        {
+          title: "Tên sách",
+          dataIndex: "book",
+          key: "book",
+          render: (item) => <a>{item.name}</a>,
+        },
+        {
+          title: "Người mượn",
+          dataIndex: "user",
+          key: "user",
+          render: (item) => (
+            <button
+              onClick={(e) => {
+                dispatch(setUserId(item._id));
+                dispatch(setOpen(true));
+              }}
+            >
+              <span className="text-blue-600">{item.name}</span>
+            </button>
+          ),
+        },
+        {
+          title: "Tình trạng",
+          dataIndex: "status",
+          key: "status",
+          render: (item) => (
+            <span style={{ color: CONTRACTS[item].color }}>
+              {CONTRACTS[item].title}
+            </span>
+          ),
+        },
+        {
+          title: "Thời gian",
+          dataIndex: "createdAt",
+          key: "createdAt",
+          render: (item) => vnDate(item),
+        },
+      ].filter((item) => !removedColumns.includes(item.key));
+    }
+    return [];
+  }, [removedColumns]);
+
+  const data = useMemo(() => {
+    return contracts
+      ? contracts.map((contract, index) => ({
+          key: index,
+          book: contract.book,
+          user: contract.user,
+          status: contract.status,
+          createdAt: contract.createdAt,
+        }))
+      : [];
+  }, [contracts]);
 
   useEffect(() => {
-    dispatch(fetchTotalContractHistory({ book }));
-    dispatch(fetchContractHistory({ book }));
-  }, [book]);
+    dispatch(fetchContracts({ book, user }));
+    dispatch(fetchTotal({ book, user }));
+  }, [book, user]);
 
   useEffect(() => {
     setTableParams({
       pagination: {
         ...tableParams.pagination,
-        total: totalContractHistory,
+        total,
       },
     });
-  }, [totalContractHistory]);
+  }, [total]);
+
   const handleTableChange = (pagination) => {
     setTableParams({
       pagination,
     });
-    dispatch(fetchContractHistory({ book, page: pagination.current - 1 }));
+    dispatch(fetchContracts({ book, user, page: pagination.current - 1 }));
   };
   return (
     <>
-      {contractHistory ? (
+      {contracts ? (
         <Table
           pagination={tableParams.pagination}
           columns={columns}

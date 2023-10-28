@@ -2,29 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-
 
 html {
-    @apply text-gray-700;
-    font-size: 14px;
-   
-    /* @apply bg-gray-200; */
+  @apply text-gray-700;
+  @apply bg-[#F0F2F5];
+  font-size: 14px;
 }
 
-
-.parent-tag-hover:hover  .child-tag-hover {
-    display: block !important;
+.rounded-\[10rem\] {
+  border-radius: 10rem !important;
+}
+.ant-picker-time-panel {
+  display: none !important;
+}
+.parent-tag-hover:hover .child-tag-hover {
+  display: block !important;
 }
 .child-tag-hover:hover {
-    display: block !important;
+  display: block !important;
 }
 
 .animate-left {
-    transition: linear left 0.2s;
+  transition: linear left 0.2s;
 }

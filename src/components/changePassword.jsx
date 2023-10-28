@@ -3,26 +3,34 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { App, Modal, Button, Form, Input } from "antd";
 
-import { changePassword } from "../slices/auth";
+import { setLastAction, changePassword } from "../slices/auth";
 
 function ChangePassword({ open: isModalOpen, setOpen: setIsModalOpen }) {
   const { notification } = App.useApp();
   const dispatch = useDispatch();
   const loading = useSelector((state) => state.auth.loading);
+  const lastAction = useSelector((state) => state.auth.lastAction);
   const error = useSelector((state) => state.auth.error);
-  useEffect(() => {
-    if (error) {
-      notification.error({
-        message: "Lỗi",
-        description: "Đổi mật khẩu thất bại",
-        placement: "topRight",
-      });
-    }
-  }, [error]);
 
   useEffect(() => {
-    if (!loading && !error) {
-      setIsModalOpen(false);
+    if (!loading) {
+      if (lastAction == "changePassword") {
+        if (error) {
+          notification.error({
+            message: "Lỗi",
+            description: "Đổi mật khẩu thất bại",
+            placement: "topRight",
+          });
+        } else {
+          notification.success({
+            message: "Thông báo",
+            description: "Đổi mật khẩu thành công",
+            placement: "topRight",
+          });
+          setIsModalOpen(false);
+        }
+        dispatch(setLastAction(null));
+      }
     }
   }, [loading]);
 

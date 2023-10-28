@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/prop-types */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
+  App,
   Descriptions,
   ConfigProvider,
   Tabs,
@@ -23,85 +24,89 @@ import {
   setAuthor,
   fetchBooks,
   fetchTotal,
-  requestAppointment,
 } from "../slices/book";
-import { BOOK_STATUS, DEFAULT_COVER_URL } from "../constants";
+import { DEFAULT_COVER_URL } from "../constants";
 
 import { setTab } from "../slices/homeSlice";
+import { createContract, setLastAction } from "../slices/contract";
 
 const { RangePicker } = DatePicker;
+const tabTokens = {
+  cardBg: "rgba(255, 255, 0, 1)",
+  itemSelectedColor: "#1677ff",
+  titleFontSize: 20,
+  itemColor: "(0, 0, 0, 0.88)",
+  colorBorder: "#d9d9d9",
+  colorBgContainer: "#ffffff",
+  colorBorderSecondary: "#f0f0f0",
+};
 
 function BookModal({ book, closeModal }) {
+  const { notification } = App.useApp();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
-  const loading = useSelector((state) => state.book.loading);
-  const error = useSelector((state) => state.book.error);
+  const loading = useSelector((state) => state.contract.loading);
+  const lastAction = useSelector((state) => state.contract.lastAction);
+  const error = useSelector((state) => state.contract.error);
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
 
-  const [api, contextHolder] = notification.useNotification();
-  const openNotification = (message) => {
-    api[message.type]({
-      message: message.title,
-      description: message.content,
-      placement: "topRight",
-    });
-  };
-
-  const tabTokens = {
-    cardBg: "rgba(255, 255, 0, 1)",
-    itemSelectedColor: "#1677ff",
-    titleFontSize: 20,
-    itemColor: "(0, 0, 0, 0.88)",
-    colorBorder: "#d9d9d9",
-    colorBgContainer: "#ffffff",
-    colorBorderSecondary: "#f0f0f0",
-  };
-
-  const items = [
-    {
-      key: "count",
-      label: "Giới thiệu",
-      children: <h1>{book.description}</h1>,
-    },
-    {
-      key: "createdAt",
-      label: "Lịch sử",
-      children: <ContractHistory book={book._id} />,
-    },
-  ];
+  const items = useMemo(() => {
+    return (
+      book && [
+        {
+          key: "count",
+          label: "Giới thiệu",
+          children: <h1>{book.description}</h1>,
+        },
+        {
+          key: "createdAt",
+          label: "Lịch sử",
+          children: (
+            <ContractHistory book={book._id} removedColumns={["book"]} />
+          ),
+        },
+      ]
+    );
+  }, [book]);
 
   useEffect(() => {
-    if (loading == false && open) {
-      setOpen(false);
-      if (!error) {
-        openNotification({
-          title: "Thông báo",
-          type: "success",
-          content: "Đặt lịch hẹn thành không (chờ duyệt)",
-        });
+    if (!loading) {
+      if (lastAction == "createContract") {
+        dispatch(setLastAction(null));
+        if (error) {
+          notification.error({
+            message: "Thông báo",
+            description: "Đặt lịch hẹn không thành không",
+          });
+        } else {
+          notification.success({
+            message: "Thông báo",
+            description: "Đặt lịch hẹn thành không (chờ duyệt)",
+          });
+          setOpen(false);
+        }
       }
     }
   }, [loading]);
 
-  const showModal = () => {
-    setOpen(true);
-  };
   const handleOk = () => {
     if (from && to) {
-      dispatch(requestAppointment({ from, to, book: book._id }));
+      dispatch(
+        createContract({
+          from,
+          to,
+          book: book._id,
+          indexedContent: `${book.name} ${user.name}`,
+        })
+      );
       return;
     }
-    openNotification({
-      title: "Cảnh báo",
-      type: "error",
-      content: "Thời gian không hợp lệ",
+    notification.error({
+      message: "Cảnh báo",
+      description: "Thời gian không hợp lệ",
     });
-  };
-
-  const handleCancel = () => {
-    setOpen(false);
   };
 
   const onTimeChange = (value) => {
@@ -136,7 +141,7 @@ function BookModal({ book, closeModal }) {
         category: null,
         search: null,
         [label]: value,
-      }),
+      })
     );
     dispatch(
       fetchTotal({
@@ -145,20 +150,28 @@ function BookModal({ book, closeModal }) {
         category: null,
         search: null,
         [label]: value,
-      }),
+      })
     );
   }
 
   return (
     <>
-      {contextHolder}
-      <div className="w-full  bg-white p-2 flex mb-2 flex-wrap">
-        <div className="w-[10rem] h-[15.5rem]">
+      <div className="w-full  bg-white p-2 flex mb-2 flex-wrap justify-center">
+        <div className="w-[10rem] h-[14rem] relative">
           <img
             src={book.cover ? book.cover : DEFAULT_COVER_URL}
-            className="h-full"
+            className="h-full w-full"
             alt=""
           />
+          <span
+            className="absolute w-full  text-center font-semibold text-[1rem] bottom-0 text-white"
+            style={{
+              backgroundColor:
+                book.borrowedCount < book.count ? "green" : "red",
+            }}
+          >
+            {book.borrowedCount < book.count ? "Sẵn sàng" : "Hết sách"}
+          </span>
         </div>
 
         <div className="flex  flex-1 flex-col px-2 justify-between">
@@ -174,67 +187,69 @@ function BookModal({ book, closeModal }) {
           >
             <Descriptions column={1} title={book.name}>
               <Descriptions.Item label="Tác giả">
-                {book.authors.map((v, i) => (
-                  <Tag key={i}>
-                    <button
-                      onClick={() => {
-                        changeTab(setAuthor(v), { label: "author", value: v });
-                      }}
-                    >
-                      {v}
-                    </button>
-                  </Tag>
-                ))}
+                <span className="flex flex-wrap gap-1">
+                  {book.authors.map((v, i) => (
+                    <Tag key={i}>
+                      <button
+                        onClick={() => {
+                          changeTab(setAuthor(v), {
+                            label: "author",
+                            value: v,
+                          });
+                        }}
+                      >
+                        {v}
+                      </button>
+                    </Tag>
+                  ))}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Thể loại">
-                {book.categories.map((v, i) => (
-                  <Tag key={i}>
-                    <button
-                      onClick={() => {
-                        changeTab(setCategory(v), {
-                          label: "category",
-                          value: v,
-                        });
-                      }}
-                    >
-                      {v}
-                    </button>
-                  </Tag>
-                ))}
+                <span className="flex flex-wrap gap-1">
+                  {book.categories.map((v, i) => (
+                    <Tag key={i}>
+                      <button
+                        onClick={() => {
+                          changeTab(setCategory(v), {
+                            label: "category",
+                            value: v,
+                          });
+                        }}
+                      >
+                        {v}
+                      </button>
+                    </Tag>
+                  ))}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Nhà xuất bản">
-                {book.publishers.map((v, i) => (
-                  <Tag key={i}>
-                    <button
-                      onClick={() => {
-                        changeTab(setPublisher(v), {
-                          label: "publisher",
-                          value: v,
-                        });
-                      }}
-                    >
-                      {v}
-                    </button>
-                  </Tag>
-                ))}
+                <span className="flex flex-wrap gap-1">
+                  {book.publishers.map((v, i) => (
+                    <Tag key={i}>
+                      <button
+                        onClick={() => {
+                          changeTab(setPublisher(v), {
+                            label: "publisher",
+                            value: v,
+                          });
+                        }}
+                      >
+                        {v}
+                      </button>
+                    </Tag>
+                  ))}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Lượt mượn: ">
                 {book.contracts}
-              </Descriptions.Item>
-              <Descriptions.Item label="Tình trạng: ">
-                {
-                  <span style={{ color: BOOK_STATUS[book.status].color }}>
-                    {BOOK_STATUS[book.status].title}
-                  </span>
-                }
               </Descriptions.Item>
             </Descriptions>
           </ConfigProvider>
           <Button
             className="remove-all"
             type="primary"
-            onClick={showModal}
-            disabled={user ? false : true}
+            onClick={() => setOpen(true)}
+            disabled={user && book.borrowedCount < book.count ? false : true}
           >
             Đặt lịch mượn
           </Button>
@@ -244,11 +259,12 @@ function BookModal({ book, closeModal }) {
             open={open}
             onOk={handleOk}
             confirmLoading={loading}
-            onCancel={handleCancel}
+            onCancel={() => setOpen(false)}
             okText="Đặt lịch"
             okType="primary"
+            destroyOnClose={true}
           >
-            <RangePicker format={vnDate} onChange={onTimeChange} />
+            <RangePicker format={vnDate} onChange={onTimeChange} showTime />
           </Modal>
         </div>
         <div className=" w-full ">

@@ -17,10 +17,12 @@ import Auth from "../components/auth";
 import Profile from "../components/profile";
 import ChangePassword from "../components/changePassword";
 
-import bg from "../assets/bg.jpg";
+import bg from "../assets/bg1.png";
 
 import { logout } from "../slices/auth";
 import { PICTURE_HOST } from "../constants";
+
+import { setUserId, setOpen } from "../slices/profile";
 
 function DefaultLayout({ children }) {
   const dispatch = useDispatch();
@@ -29,7 +31,6 @@ function DefaultLayout({ children }) {
   const isRoot = useSelector((state) => state.auth.isRoot);
   const [ratio, setRatio] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
 
   const popoverContent = useMemo(() => {
@@ -47,7 +48,8 @@ function DefaultLayout({ children }) {
         <Menu.Item
           icon={<ProfileOutlined />}
           onClick={() => {
-            setProfileOpen(true);
+            dispatch(setUserId(user._id));
+            dispatch(setOpen(true));
           }}
         >
           Hồ sơ của tôi
@@ -83,7 +85,7 @@ function DefaultLayout({ children }) {
 
   return (
     <>
-      <div className="w-full relative">
+      <div className="w-full relative ">
         <img src={bg} className="w-full  z-[-1]" alt="" />
         <div className="absolute top-0 px-5 w-full h-15 flex items-center justify-between pt-5">
           <a href="#" className="text-[2rem] text-white font-semibold block ">
@@ -122,11 +124,7 @@ function DefaultLayout({ children }) {
                   </button>
                 </Popover>
               </div>
-              <Profile
-                open={profileOpen}
-                setOpen={setProfileOpen}
-                userId={user._id}
-              />
+              <Profile />
               <ChangePassword
                 open={changePassOpen}
                 setOpen={setChangePassOpen}

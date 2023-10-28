@@ -3,24 +3,34 @@
 import { useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { Modal, Tabs, Form, Input, Button, Checkbox } from "antd";
+import { App, Modal, Tabs, Form, Input, Button, Checkbox } from "antd";
 
 import { LockOutlined, MailOutlined } from "@ant-design/icons";
 
 import LoginGoogleBtn from "./loginGoogleBtn";
 import LoginFacebookBtn from "./loginFacebookBtn";
 
-import { register, login } from "../slices/auth";
+import { setLastAction, register, login } from "../slices/auth";
 
 function Auth({ open: isModalOpen, setOpen: setIsModalOpen }) {
+  const { notification } = App.useApp();
   const dispatch = useDispatch();
   const loading = useSelector((state) => state.auth.loading);
   const error = useSelector((state) => state.auth.error);
+  const lastAction = useSelector((state) => state.auth.lastAction);
 
   useEffect(() => {
     if (!loading) {
-      if (error) {
-      } else {
+      if (lastAction == "login") {
+        if (error) {
+          notification.error({
+            message: "Thông báo",
+            description: "Đăng nhập thất bại",
+            placement: "topRight",
+          });
+        } else {
+        }
+        setLastAction(null);
       }
     }
   }, [loading]);

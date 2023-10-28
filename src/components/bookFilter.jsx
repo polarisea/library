@@ -30,9 +30,27 @@ function BookFilter() {
   const [initCategory, setInitCategory] = useState(null);
   const [initPublisher, setInitPublisher] = useState(null);
 
+  const authorsOptions = useMemo(() => {
+    return authors.map((v) => ({ label: v, value: v }));
+  }, [authors]);
+
+  const categoriesOptions = useMemo(() => {
+    return categories.map((v) => ({ label: v, value: v }));
+  }, [categories]);
+
+  const publishersOptions = useMemo(() => {
+    return publishers.map((v) => ({ label: v, value: v }));
+  }, [publishers]);
+
+  useEffect(() => {
+    dispatch(fetchAuthors());
+    dispatch(fetchCategories());
+    dispatch(fetchPublishers());
+  }, []);
+
   useEffect(() => {
     setKeyword(search);
-  }, [search, author, category, publisher]);
+  }, [search]);
 
   useEffect(() => {
     setInitAuthor(author);
@@ -46,23 +64,6 @@ function BookFilter() {
     setInitPublisher(publisher);
   }, [publisher]);
 
-  const authorsOptions = useMemo(() => {
-    return authors.map((v) => ({ label: v, value: v }));
-  }, [authors]);
-  const categoriesOptions = useMemo(() => {
-    return categories.map((v) => ({ label: v, value: v }));
-  }, [categories]);
-  const publishersOptions = useMemo(() => {
-    return publishers.map((v) => ({ label: v, value: v }));
-  }, [publishers]);
-
-  useEffect(() => {
-    dispatch(setSearch(keyword));
-    dispatch(fetchAuthors());
-    dispatch(fetchCategories());
-    dispatch(fetchPublishers());
-  }, []);
-
   const onSubmit = async () => {
     dispatch(fetchTotal({ search: keyword }));
     dispatch(fetchBooks({ search: keyword }));
@@ -74,6 +75,7 @@ function BookFilter() {
         <Input
           value={keyword}
           onChange={(e) => {
+            dispatch(setSearch(e.target.value));
             setKeyword(e.target.value);
           }}
           placeholder="Từ khóa"

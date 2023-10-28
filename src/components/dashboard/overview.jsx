@@ -54,14 +54,14 @@ import {
   fetchContractCountInLast12Months,
 } from "../../slices/chart";
 
-import { BOOK_STATUS, CONTRACT_STATUS } from "../../constants";
+import { BOOK_STATUS, CONTRACTS } from "../../constants";
 
 function Overview() {
   const dispatch = useDispatch();
   const userTotal = useSelector((state) => state.user.total);
   const contractTotal = useSelector((state) => state.contract.total);
-  const bookTotal = useSelector((state) => state.book.total);
   const bookStatusCount = useSelector((state) => state.chart.bookStatusCount);
+
   const borrowedBookCount = useSelector(
     (state) => state.chart.borrowedBookCount
   );
@@ -90,6 +90,13 @@ function Overview() {
     dispatch(fetchContractCountInLast12Months());
   }, []);
 
+  const bookTotal = useMemo(() => {
+    if (bookStatusCount) {
+      return (
+        bookStatusCount.totalStockCount + bookStatusCount.totalBorrowedCount
+      );
+    }
+  }, [bookStatusCount]);
   const bookStatus = useMemo(() => {
     const data = {
       labels: [],
@@ -101,18 +108,14 @@ function Overview() {
         },
       ],
     };
-    if (!bookStatusCount) return data;
-    const tmp = bookStatusCount.reduce((result, obj) => {
-      result[obj._id] = obj.count;
-      return result;
-    }, {});
-
-    for (const k in BOOK_STATUS) {
-      data.labels.push(BOOK_STATUS[k].title);
-      const amount = tmp[BOOK_STATUS[k].value];
-
-      data.datasets[0].data.push(amount);
-      data.datasets[0].backgroundColor.push(BOOK_STATUS[k].color);
+    if (bookStatusCount) {
+      data.labels = ["Sách trong kho", "Sách đang được mượn", "Sách bị hỏng"];
+      data.datasets[0].data = [
+        bookStatusCount.totalStockCount,
+        bookStatusCount.totalBorrowedCount,
+        bookStatusCount.totalBrokenCount,
+      ];
+      data.datasets[0].backgroundColor = ["green", "yellow", "red"];
     }
     return data;
   }, [bookStatusCount]);
@@ -183,12 +186,12 @@ function Overview() {
       return result;
     }, {});
 
-    for (const k in CONTRACT_STATUS) {
-      data.labels.push(CONTRACT_STATUS[k].title);
-      const amount = tmp[CONTRACT_STATUS[k].value];
+    for (const k in CONTRACTS) {
+      data.labels.push(CONTRACTS[k].title);
+      const amount = tmp[CONTRACTS[k].value];
 
       data.datasets[0].data.push(amount);
-      data.datasets[0].backgroundColor.push(CONTRACT_STATUS[k].color);
+      data.datasets[0].backgroundColor.push(CONTRACTS[k].color);
     }
     return data;
   }, [contractStatusCount]);
@@ -290,24 +293,7 @@ function Overview() {
             }}
           />
         </div>
-        <div className="bg-gray-50 rounded-lg shadow-lg flex justify-center">
-          <Doughnut
-            data={borrowedBook}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "top",
-                },
-                title: {
-                  position: "bottom",
-                  display: true,
-                  text: "Trạng thái sách",
-                },
-              },
-            }}
-          />
-        </div>
+
         <div className="bg-gray-50 rounded-lg shadow-lg flex justify-center">
           <Doughnut
             data={contractStatus}

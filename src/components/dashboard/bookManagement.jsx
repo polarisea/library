@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { App, Input, Button, Table, Modal, Popconfirm } from "antd";
+import { App, Input, Button, Table, Modal, Popconfirm, Select } from "antd";
 import BookForm from "./bookForm";
 import AddButton from "../addButton";
 
@@ -85,14 +85,28 @@ function BookManagement() {
         },
       },
       {
-        title: "Tình trạng",
-        dataIndex: "status",
-        key: "status",
-        render: (item) => (
-          <span style={{ color: BOOK_STATUS[item].color }}>
-            {BOOK_STATUS[item].title}
-          </span>
-        ),
+        title: "Số lượng",
+        dataIndex: "count",
+        key: "count",
+        render: (item) => item,
+      },
+      {
+        title: "Sách trong kho",
+        dataIndex: "stockCount",
+        key: "stockCount",
+        render: (item) => item,
+      },
+      {
+        title: "Sách đang được mượn",
+        dataIndex: "borrowedCount",
+        key: "borrowedCount",
+        render: (item) => item,
+      },
+      {
+        title: "Sách bị hỏng",
+        dataIndex: "brokenCount",
+        key: "brokenCount",
+        render: (item) => item,
       },
       {
         title: "Lượt mượn",
@@ -149,7 +163,7 @@ function BookManagement() {
         ),
       },
     ];
-  }, []);
+  }, [books]);
 
   useEffect(() => {
     dispatch(fetchBookTotal());
@@ -234,10 +248,9 @@ function BookManagement() {
     dispatch(fetchBooks({ page: pagination.current - 1 }));
   }
 
-  function onSearch() {
-    dispatch(setSearch(keyword));
-    dispatch(fetchBookTotal({ search: keyword }));
-    dispatch(fetchBooks({ search: keyword }));
+  function onFilter(overwrite) {
+    dispatch(fetchBookTotal({ search: keyword, ...overwrite }));
+    dispatch(fetchBooks({ search: keyword, ...overwrite }));
   }
 
   function onDelete(bookId) {
@@ -262,16 +275,23 @@ function BookManagement() {
         />
       </Modal>
       <div className="p-2  overflow-x-scroll max-lg:w-[100vw]">
-        <div className="flex justify-between  mb-2 w-full ">
-          <span className="w-[20rem]">
-            <Input
-              placeholder="Tìm kiếm..."
-              value={keyword}
+        <span className="flex  justify-between   mb-2 w-full flex-wrap gap-1">
+          <span className="flex justify-start gap-2 max-lg:w-full  flex-wrap">
+            <span className="w-[20rem] max-lg:w-[95%]">
+              <Input
+                placeholder="Tìm kiếm..."
+                value={keyword}
+                size="large"
+                onPressEnter={onFilter}
+                onChange={(value) => setKeyword(value.target.value)}
+              />
+            </span>
+            {/* <Select
               size="large"
-              onPressEnter={onSearch}
-              onChange={(value) => setKeyword(value.target.value)}
               allowClear
-            />
+              className="w-[20rem] max-lg:w-[95%]"
+              placeholder="Vai trò"
+            /> */}
           </span>
           <AddButton
             onClick={() => {
@@ -280,7 +300,7 @@ function BookManagement() {
               setModalOpen(true);
             }}
           />
-        </div>
+        </span>
         <Table
           bordered
           pagination={tableParams.pagination}

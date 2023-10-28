@@ -54,8 +54,7 @@ function UserManagement() {
     },
   });
   const [selectedUser, setSelectedUser] = useState(null);
-  const [perssmision, setPermission] = useState(null);
-  const [data, setData] = useState([]);
+  const [permission, setPermission] = useState(null);
 
   const columns = useMemo(() => {
     return [
@@ -123,8 +122,10 @@ function UserManagement() {
               type="primary"
               onClick={() => {
                 for (const u of users) {
-                  if (u._id == item) setSelectedUser(u);
-                  break;
+                  if (u._id == item) {
+                    setSelectedUser(u);
+                    break;
+                  }
                 }
                 setModalOpen(true);
               }}
@@ -148,7 +149,9 @@ function UserManagement() {
     ];
   }, [users]);
 
-  const [keyword, setKeyword] = useState("");
+  const [keyword, setKeyword] = useState(null);
+  const [role, setRole] = useState(null);
+
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
@@ -159,6 +162,8 @@ function UserManagement() {
   useEffect(() => {
     if (!loading) {
       if (lastAction == "deleteUser") {
+        dispatch(setLastAction(null));
+
         if (error) {
           notification.error({
             message: "Thông báo",
@@ -171,25 +176,26 @@ function UserManagement() {
             description: "Xóa tài khoản thành công",
             placement: "topRight",
           });
-          dispatch(fetchUsers());
+          onFilter({ page: tableParams.pagination.current - 1 });
         }
-        dispatch(setLastAction(null));
       }
       if (lastAction == "grantPermission") {
         dispatch(setLastAction(null));
+
         if (error) {
           notification.error({
             message: "Thông báo",
             description: "Phân quyên thất bại",
             placement: "topRight",
           });
-          setModalOpen(false);
         } else {
           notification.success({
             message: "Thông báo",
             description: "Phân quyền thành công",
             placement: "topRight",
           });
+          setModalOpen(false);
+          onFilter({ page: tableParams.pagination.current - 1 });
         }
       }
     }
@@ -204,28 +210,32 @@ function UserManagement() {
     });
   }, [userTotal]);
 
-  useEffect(() => {
-    setData(users ? users.map((user, index) => ({ ...user, key: index })) : []);
+  const data = useMemo(() => {
+    return users ? users.map((user, index) => ({ ...user, key: index })) : [];
   }, [users]);
 
   function handleTableChange(pagination) {
-    console.log("HandleTabChange");
     setTableParams({
       pagination,
     });
-    dispatch(fetchUsers({ page: pagination.current - 1, search: keyword }));
+    dispatch(
+      fetchUsers({
+        page: pagination.current - 1,
+        search: keyword,
+        role,
+      })
+    );
   }
 
-  function onSearch() {
-    console.log("onSearch");
-    dispatch(setSearch(keyword));
-    dispatch(fetchUserTotal({ search: keyword }));
-    dispatch(fetchUsers({ search: keyword }));
+  function onFilter(overwrite) {
+    dispatch(fetchUserTotal({ search: keyword, role, ...overwrite }));
+    dispatch(fetchUsers({ search: keyword, role, ...overwrite }));
   }
 
   function onGranPermission() {
-    if (perssmision) {
-      dispatch(grantPermission({ id: selectedUser._id, role: perssmision }));
+    if (permission) {
+      dispatch(grantPermission({ id: selectedUser._id, role: permission }));
+      setPermission(null);
     }
   }
 
@@ -243,46 +253,40 @@ function UserManagement() {
           setModalOpen(false);
         }}
         onOk={onGranPermission}
+        destroyOnClose={true}
       >
         <Select
           placeholder="Lựa chọn quyền"
           style={{
             width: 200,
           }}
+          value={permission}
           options={roleOptions}
-          defaultValue={selectedUser?.role}
           onChange={(value) => setPermission(value)}
         />
       </Modal>
       <div className="p-2 overflow-x-scroll max-lg:w-[100vw]">
-        <div className="flex justify-start gap-2  mb-2 w-full ">
-          <span className="w-[20rem]">
+        <div className="flex justify-start gap-2  mb-2 w-full flex-wrap">
+          <span className="w-[20rem] max-lg:w-[95%]">
             <Input
               placeholder="Tìm kiếm..."
               value={keyword}
               size="large"
-              onPressEnter={onSearch}
+              onPressEnter={onFilter}
               onChange={(value) => setKeyword(value.target.value)}
             />
           </span>
           <Select
-            width={200}
             size="large"
+            value={role}
             options={roleOptions}
             allowClear
-            className="w-[20rem]"
+            className="w-[20rem] max-lg:w-[95%]"
             placeholder="Vai trò"
-            onChange={(e) => {
-              console.log(e);
+            onChange={(value) => {
+              setRole(value);
+              onFilter({ role: value });
             }}
-          />
-          <Select
-            width={200}
-            size="large"
-            options={roleOptions}
-            allowClear
-            className="w-[20rem]"
-            placeholder="Sắp xếp theo"
           />
         </div>
         <Table
