@@ -5,7 +5,6 @@ export const fetchBooks = createAsyncThunk(
   "book/fetchBooks",
   async (params, { getState, dispatch }) => {
     dispatch(bookSlice.actions.setLastAction("fetchBooks"));
-
     const { search, author, category, sort, publisher } = getState().book;
     const { data } = await apiService.get(`books`, {
       params: {
@@ -25,7 +24,6 @@ export const fetchBook = createAsyncThunk(
   "book/fetchBook",
   async (bookId, { dispatch }) => {
     dispatch(bookSlice.actions.setLastAction("fetchBook"));
-
     const { data } = await apiService.get(`books/${bookId}/get`, {});
     return data;
   }
@@ -44,14 +42,6 @@ export const fetchTotal = createAsyncThunk(
         ...params,
       },
     });
-    return data;
-  }
-);
-
-export const fetchStatusCount = createAsyncThunk(
-  "book/fetchStatusCount",
-  async () => {
-    const { data } = await apiService.get(`books/status-count`, {});
     return data;
   }
 );
@@ -78,47 +68,6 @@ export const updateBook = createAsyncThunk(
   }
 );
 
-export const fetchContractHistory = createAsyncThunk(
-  "book/contractHistory",
-  async (params) => {
-    const { data } = await apiService.get(`contracts`, {
-      params: {
-        ...params,
-      },
-    });
-    return data;
-  }
-);
-
-export const fetchTotalContractHistory = createAsyncThunk(
-  "book/totalContractHistory",
-  async (params) => {
-    const { data } = await apiService.get(`contracts/count`, {
-      params: {
-        ...params,
-      },
-    });
-    return data;
-  }
-);
-
-export const requestAppointment = createAsyncThunk(
-  "book/requestAppointment",
-  async (body) => {
-    const { data } = await apiService.post(`books/request-appointment`, {
-      ...body,
-    });
-    return data;
-  }
-);
-
-export const vote = createAsyncThunk("book/vote", async (body) => {
-  const { data } = await apiService.patch(`votes`, {
-    ...body,
-  });
-  return data;
-});
-
 export const deleteBook = createAsyncThunk(
   "book/deleteBook",
   async (bookId, { dispatch }) => {
@@ -140,10 +89,7 @@ const bookSlice = createSlice({
     category: null,
     publisher: null,
     total: 0,
-    statusCount: null,
     sort: "contracts",
-    contractHistory: null,
-    totalContractHistory: 0,
     lastAction: null,
   },
   reducers: {
@@ -181,6 +127,7 @@ const bookSlice = createSlice({
       state.publisher = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchBooks.pending, (state) => {
@@ -197,8 +144,9 @@ const bookSlice = createSlice({
       })
       .addCase(fetchBooks.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message;
+        state.error = true;
       });
+
     builder
       .addCase(fetchBook.pending, (state) => {
         state.loading = true;
@@ -213,100 +161,41 @@ const bookSlice = createSlice({
       })
       .addCase(fetchBook.rejected, (state) => {
         state.loading = false;
-        state.error = "Tải thông tin book thất bại";
+        state.error = true;
       });
-    builder
-      .addCase(fetchTotal.pending, (state) => {
-        state.error = null;
-      })
-      .addCase(fetchTotal.fulfilled, (state, action) => {
-        state.total = action.payload;
-      })
-      .addCase(fetchTotal.rejected, (state, action) => {
-        state.error = action.error.message;
-      });
-    builder
-      .addCase(fetchStatusCount.pending, (state) => {
-        state.error = null;
-        state.statusCount = null;
-      })
-      .addCase(fetchStatusCount.fulfilled, (state, action) => {
-        state.statusCount = action.payload;
-      })
-      .addCase(fetchStatusCount.rejected, (state, action) => {
-        state.error = action.error.message;
-      });
-    builder
-      .addCase(fetchContractHistory.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchContractHistory.fulfilled, (state, action) => {
-        state.loading = false;
-        state.contractHistory = action.payload;
-      })
-      .addCase(fetchContractHistory.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      });
-    builder
-      .addCase(fetchTotalContractHistory.pending, (state) => {
-        state.error = null;
-      })
-      .addCase(fetchTotalContractHistory.fulfilled, (state, action) => {
-        state.totalContractHistory = action.payload;
-      })
-      .addCase(fetchTotalContractHistory.rejected, (state, action) => {
-        state.error = action.error.message;
-      });
-    builder
-      .addCase(requestAppointment.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(requestAppointment.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(requestAppointment.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      });
-    builder
-      .addCase(vote.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(vote.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(vote.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      });
+
+    builder.addCase(fetchTotal.fulfilled, (state, action) => {
+      state.total = action.payload;
+    });
+
     builder
       .addCase(createBook.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(createBook.fulfilled, (state) => {
+      .addCase(createBook.fulfilled, (state, action) => {
         state.loading = false;
+        state.book = action.payload;
       })
       .addCase(createBook.rejected, (state) => {
         state.loading = false;
         state.error = true;
       });
+
     builder
       .addCase(updateBook.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(updateBook.fulfilled, (state) => {
+      .addCase(updateBook.fulfilled, (state, action) => {
         state.loading = false;
+        state.book = action.payload;
       })
       .addCase(updateBook.rejected, (state) => {
         state.loading = false;
         state.error = true;
       });
+
     builder
       .addCase(deleteBook.pending, (state) => {
         state.loading = true;

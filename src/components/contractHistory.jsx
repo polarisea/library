@@ -10,13 +10,14 @@ import { vnDate } from "../utils/date";
 
 import { setUserId, setOpen } from "../slices/profile";
 
-function ContractHistory({ book, user, removedColumns }) {
+function ContractHistory({ book, user, removedColumns, closeBookModal }) {
   const dispatch = useDispatch();
   const contracts = useSelector((state) => state.contract.contracts);
   const total = useSelector((state) => state.contract.total);
   const loading = useSelector((state) => state.contract.loading);
-  const error = useSelector((state) => state.contract.error);
-  const lastAction = useSelector((state) => state.contract.lastAction);
+  const isLogin = useSelector((state) => state.auth.user);
+  // const error = useSelector((state) => state.contract.error);
+  // const lastAction = useSelector((state) => state.contract.lastAction);
 
   const [tableParams, setTableParams] = useState({
     pagination: {
@@ -35,7 +36,7 @@ function ContractHistory({ book, user, removedColumns }) {
           title: "Tên sách",
           dataIndex: "book",
           key: "book",
-          render: (item) => <a>{item.name}</a>,
+          render: (item) => <a>{item?.name}</a>,
         },
         {
           title: "Người mượn",
@@ -44,11 +45,14 @@ function ContractHistory({ book, user, removedColumns }) {
           render: (item) => (
             <button
               onClick={(e) => {
-                dispatch(setUserId(item._id));
-                dispatch(setOpen(true));
+                if (isLogin) {
+                  closeBookModal();
+                  dispatch(setUserId(item?._id));
+                  dispatch(setOpen(true));
+                }
               }}
             >
-              <span className="text-blue-600">{item.name}</span>
+              <span className="text-blue-600">{item?.name || "Đã bị xóa"}</span>
             </button>
           ),
         },
@@ -57,8 +61,8 @@ function ContractHistory({ book, user, removedColumns }) {
           dataIndex: "status",
           key: "status",
           render: (item) => (
-            <span style={{ color: CONTRACTS[item].color }}>
-              {CONTRACTS[item].title}
+            <span style={{ color: CONTRACTS[item]?.color }}>
+              {CONTRACTS[item]?.title}
             </span>
           ),
         },
@@ -68,10 +72,10 @@ function ContractHistory({ book, user, removedColumns }) {
           key: "createdAt",
           render: (item) => vnDate(item),
         },
-      ].filter((item) => !removedColumns.includes(item.key));
+      ].filter((item) => !removedColumns.includes(item?.key));
     }
     return [];
-  }, [removedColumns]);
+  }, [removedColumns, isLogin]);
 
   const data = useMemo(() => {
     return contracts
@@ -88,6 +92,7 @@ function ContractHistory({ book, user, removedColumns }) {
   useEffect(() => {
     dispatch(fetchContracts({ book, user }));
     dispatch(fetchTotal({ book, user }));
+    console.log("User: ", user);
   }, [book, user]);
 
   useEffect(() => {

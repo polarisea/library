@@ -35,7 +35,16 @@ const roleOptions = [
     value: ROLES.user.value,
   },
 ];
-
+const sortOptions = [
+  {
+    label: "Sắp xếp theo lượt mượn",
+    value: "contracts",
+  },
+  {
+    label: "Sắp xếp theo thời gian tạo",
+    value: "createdAt",
+  },
+];
 function UserManagement() {
   const { notification } = App.useApp();
   const dispatch = useDispatch();
@@ -151,12 +160,12 @@ function UserManagement() {
 
   const [keyword, setKeyword] = useState(null);
   const [role, setRole] = useState(null);
-
+  const [sort, setSort] = useState("contracts");
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     dispatch(fetchUserTotal());
-    dispatch(fetchUsers());
+    dispatch(fetchUsers({ sort }));
   }, []);
 
   useEffect(() => {
@@ -222,6 +231,7 @@ function UserManagement() {
       fetchUsers({
         page: pagination.current - 1,
         search: keyword,
+        sort,
         role,
       })
     );
@@ -229,7 +239,7 @@ function UserManagement() {
 
   function onFilter(overwrite) {
     dispatch(fetchUserTotal({ search: keyword, role, ...overwrite }));
-    dispatch(fetchUsers({ search: keyword, role, ...overwrite }));
+    dispatch(fetchUsers({ search: keyword, sort, role, ...overwrite }));
   }
 
   function onGranPermission() {
@@ -265,9 +275,9 @@ function UserManagement() {
           onChange={(value) => setPermission(value)}
         />
       </Modal>
-      <div className="p-2 overflow-x-scroll max-lg:w-[100vw]">
-        <div className="flex justify-start gap-2  mb-2 w-full flex-wrap">
-          <span className="w-[20rem] max-lg:w-[95%]">
+      <div className="px-2 max-lg:pr-0 max-lg:w-[100vw] flex-1 flex flex-col h-[calc(100vh-45.5px)]">
+        <div className="flex justify-start gap-1  mb-2 w-full flex-wrap">
+          <span className="w-[20rem] max-lg:w-full">
             <Input
               placeholder="Tìm kiếm..."
               value={keyword}
@@ -281,22 +291,35 @@ function UserManagement() {
             value={role}
             options={roleOptions}
             allowClear
-            className="w-[20rem] max-lg:w-[95%]"
+            className="w-[20rem] max-lg:w-full"
             placeholder="Vai trò"
             onChange={(value) => {
               setRole(value);
               onFilter({ role: value });
             }}
           />
+          <Select
+            size="large"
+            value={sort}
+            options={sortOptions}
+            className="w-[20rem] max-lg:w-full"
+            placeholder="Sắp xếp theo"
+            onChange={(value) => {
+              setSort(value);
+              onFilter({ sort: value });
+            }}
+          />
         </div>
-        <Table
-          bordered
-          pagination={tableParams.pagination}
-          columns={columns}
-          dataSource={data}
-          onChange={handleTableChange}
-          loading={loading}
-        />
+        <div className="overflow-x-scroll flex-1 ">
+          <Table
+            bordered
+            pagination={tableParams.pagination}
+            columns={columns}
+            dataSource={data}
+            onChange={handleTableChange}
+            loading={loading}
+          />
+        </div>
       </div>
     </>
   );

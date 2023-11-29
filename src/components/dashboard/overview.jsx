@@ -84,7 +84,7 @@ function Overview() {
     dispatch(fetchContractTotal());
     dispatch(fecthBookTotal({ search: null }));
     dispatch(fetchBookStatusCount());
-    dispatch(fetchBorrowedBookCount());
+    // dispatch(fetchBorrowedBookCount());
     dispatch(fetchBookInCategoryCount());
     dispatch(fetchContractStatusCount());
     dispatch(fetchContractCountInLast12Months());
@@ -97,6 +97,7 @@ function Overview() {
       );
     }
   }, [bookStatusCount]);
+
   const bookStatus = useMemo(() => {
     const data = {
       labels: [],
@@ -119,27 +120,6 @@ function Overview() {
     }
     return data;
   }, [bookStatusCount]);
-
-  const borrowedBook = useMemo(() => {
-    const data = {
-      labels: ["Đang rảnh", "Đang cho mượn"],
-      datasets: [
-        {
-          data: [0, 0],
-          backgroundColor: ["green", "yellow"],
-          borderWidth: 1,
-        },
-      ],
-    };
-    if (!borrowedBookCount) return data;
-
-    const tmp = Object.values(borrowedBookCount).reduce((o, v) => {
-      o[v._id] = v.count;
-      return o;
-    }, {});
-    data.datasets[0].data = [tmp["0"] || 0, tmp["1"] || 0];
-    return data;
-  }, [borrowedBookCount]);
 
   const bookInCategory = useMemo(() => {
     const data = {
@@ -222,7 +202,7 @@ function Overview() {
   }, [contractCountInLast12months]);
 
   return (
-    <div className="flex flex-wrap  gap-2 max-lg:w-[95vw]  justify-center">
+    <div className="flex flex-wrap  gap-2 max-lg:w-[95vw]  justify-center h-[calc(100vh-45.5px)] overflow-y-scroll">
       <div className="lg:w-3/5 w-full flex justify-center bg-gray-50 rounded-lg shadow-lg py-5 items-center">
         <Line
           style={{
@@ -352,10 +332,6 @@ function Overview() {
             },
           }}
         />
-
-        <div className="h-[100px] w-full  bg-green-200">
-          <span>fdjlask</span>
-        </div>
       </div>
     </div>
   );

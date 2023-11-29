@@ -21,8 +21,8 @@ function Search() {
     dispatch(setPublisher(null));
     dispatch(setAuthor(null));
     dispatch(setCategory(null));
-    dispatch(setTab("#"));
     dispatch(setSearch(keyword));
+    dispatch(setTab("#"));
     setKeyword(null);
     dispatch(
       fetchBooks({
@@ -47,10 +47,10 @@ function Search() {
   };
   return (
     <>
-      <span className="w-[20rem] block shadow-lg">
+      <span className="w-[22.5rem] block shadow-lg">
         <Input
           className="rounded-[10rem]"
-          placeholder="Nhập tên sách"
+          placeholder="Nhập tên sách, tác giả ..."
           size="large"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}

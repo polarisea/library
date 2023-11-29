@@ -11,7 +11,8 @@ function LoginGoogleButton({ callback }) {
     });
 
     google.accounts.id.renderButton(parent, {
-      type: "icon",
+      type: "standard",
+      text: "Sign in with Google",
       size: "large",
     });
   }, []);

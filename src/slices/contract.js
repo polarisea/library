@@ -34,6 +34,17 @@ export const fetchContracts = createAsyncThunk(
   }
 );
 
+export const fetchContract = createAsyncThunk(
+  "contract/fetchContract",
+  async (params, { dispatch }) => {
+    dispatch(contractSlice.actions.setLastAction("fetchContract"));
+    const { data } = await apiService.get(`contracts`, {
+      params,
+    });
+    return data;
+  }
+);
+
 export const fetchTotal = createAsyncThunk(
   "contract/fetchTotal",
   async (params) => {
@@ -42,6 +53,24 @@ export const fetchTotal = createAsyncThunk(
         ...params,
       },
     });
+    return data;
+  }
+);
+
+export const cancelRequest = createAsyncThunk(
+  "contract/cancelRequest",
+  async (contractId, { dispatch }) => {
+    dispatch(contractSlice.actions.setLastAction("cancelRequest"));
+    const { data } = await apiService.delete(`contracts/${contractId}/cancel`);
+    return data;
+  }
+);
+
+export const refuseRequest = createAsyncThunk(
+  "contract/refuseRequest",
+  async (contractId, { dispatch }) => {
+    dispatch(contractSlice.actions.setLastAction("refuseRequest"));
+    const { data } = await apiService.delete(`contracts/${contractId}/refuse`);
     return data;
   }
 );
@@ -102,6 +131,19 @@ const contractSlice = createSlice({
         state.loading = false;
       });
     builder
+      .addCase(fetchContract.pending, (state) => {
+        state.error = null;
+        state.loading = true;
+      })
+      .addCase(fetchContract.fulfilled, (state, action) => {
+        state.contract = action.payload[0];
+        state.loading = false;
+      })
+      .addCase(fetchContract.rejected, (state) => {
+        state.error = true;
+        state.loading = false;
+      });
+    builder
       .addCase(fetchTotal.pending, (state) => {
         state.error = null;
       })
@@ -110,6 +152,33 @@ const contractSlice = createSlice({
       })
       .addCase(fetchTotal.rejected, (state) => {
         state.error = true;
+      });
+
+    builder
+      .addCase(cancelRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(cancelRequest.fulfilled, (state, action) => {
+        state.contract = null;
+        state.loading = false;
+      })
+      .addCase(cancelRequest.rejected, (state) => {
+        state.error = true;
+        state.loading = false;
+      });
+    builder
+      .addCase(refuseRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(refuseRequest.fulfilled, (state, action) => {
+        state.contract = null;
+        state.loading = false;
+      })
+      .addCase(refuseRequest.rejected, (state) => {
+        state.error = true;
+        state.loading = false;
       });
   },
 });

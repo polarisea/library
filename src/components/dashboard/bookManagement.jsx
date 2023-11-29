@@ -15,6 +15,17 @@ import {
 
 import { DEFAULT_COVER_URL, BOOK_STATUS } from "../../constants";
 
+const sortOptions = [
+  {
+    label: "Sắp xếp theo lượt mượn",
+    value: "contracts",
+  },
+  {
+    label: "Sắp xếp theo thời gian tạo",
+    value: "createdAt",
+  },
+];
+
 function BookManagement() {
   const { notification } = App.useApp();
   const dispatch = useDispatch();
@@ -24,6 +35,7 @@ function BookManagement() {
   const error = useSelector((state) => state.book.error);
   const lastAction = useSelector((state) => state.book.lastAction);
 
+  const [sort, setSort] = useState("contracts");
   const [data, setData] = useState([]);
   const [editMode, setEditMode] = useState("add");
   const [selectedBook, setSelectedBook] = useState({});
@@ -32,6 +44,7 @@ function BookManagement() {
       current: 1,
       pageSize: 6,
       total: bookTotal,
+      simple: true,
     },
   });
 
@@ -137,8 +150,10 @@ function BookManagement() {
               type="primary"
               onClick={() => {
                 for (const b of books) {
-                  if (b._id == item) setSelectedBook(b);
-                  break;
+                  if (b._id == item) {
+                    setSelectedBook(b);
+                    break;
+                  }
                 }
                 setEditMode("edit");
                 setModalOpen(true);
@@ -250,7 +265,7 @@ function BookManagement() {
 
   function onFilter(overwrite) {
     dispatch(fetchBookTotal({ search: keyword, ...overwrite }));
-    dispatch(fetchBooks({ search: keyword, ...overwrite }));
+    dispatch(fetchBooks({ search: keyword, sort, ...overwrite }));
   }
 
   function onDelete(bookId) {
@@ -274,10 +289,10 @@ function BookManagement() {
           book={selectedBook}
         />
       </Modal>
-      <div className="p-2  overflow-x-scroll max-lg:w-[100vw]">
-        <span className="flex  justify-between   mb-2 w-full flex-wrap gap-1">
+      <div className="px-2 max-lg:pr-0 pb-0  max-lg:w-[100vw]  flex flex-col h-[calc(100vh-45.5px)]">
+        <span className="flex  justify-between   mb-2 w-full flex-wrap gap-1 max-lg:justify-end pr-1">
           <span className="flex justify-start gap-2 max-lg:w-full  flex-wrap">
-            <span className="w-[20rem] max-lg:w-[95%]">
+            <span className="w-[20rem] max-lg:w-full">
               <Input
                 placeholder="Tìm kiếm..."
                 value={keyword}
@@ -286,12 +301,17 @@ function BookManagement() {
                 onChange={(value) => setKeyword(value.target.value)}
               />
             </span>
-            {/* <Select
+            <Select
               size="large"
-              allowClear
-              className="w-[20rem] max-lg:w-[95%]"
-              placeholder="Vai trò"
-            /> */}
+              value={sort}
+              options={sortOptions}
+              className="w-[20rem] max-lg:w-full"
+              placeholder="Sắp xếp theo"
+              onChange={(value) => {
+                setSort(value);
+                onFilter({ sort: value });
+              }}
+            />
           </span>
           <AddButton
             onClick={() => {
@@ -301,14 +321,16 @@ function BookManagement() {
             }}
           />
         </span>
-        <Table
-          bordered
-          pagination={tableParams.pagination}
-          columns={columns}
-          dataSource={data}
-          onChange={handleTableChange}
-          loading={loading}
-        />
+        <div className="overflow-x-scroll flex-1 ">
+          <Table
+            bordered
+            pagination={tableParams.pagination}
+            columns={columns}
+            dataSource={data}
+            onChange={handleTableChange}
+            loading={loading}
+          />
+        </div>
       </div>
     </>
   );

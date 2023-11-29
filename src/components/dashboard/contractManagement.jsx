@@ -1,16 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import {
-  App,
-  Select,
-  Input,
-  Button,
-  Table,
-  Modal,
-  Popconfirm,
-  Tag,
-} from "antd";
+import { App, Select, Input, Button, Table, Modal } from "antd";
 import ContractForm from "./contractForm";
 import AddButton from "../addButton";
 
@@ -21,17 +12,18 @@ import {
   fetchTotal as fetchContractTotal,
   updateContract,
   fetchContracts,
+  refuseRequest,
 } from "../../slices/contract";
 
 import { DEFAULT_COVER_URL, BOOK_STATUS, CONTRACTS } from "../../constants";
 
 const statusOptions = Object.values(CONTRACTS).map((item) => ({
-  label: item.title,
-  value: item.value,
+  label: item?.title,
+  value: item?.value,
 }));
 
 function ContractManagement() {
-  const { notification } = App.useApp();
+  const { notification, modal } = App.useApp();
   const dispatch = useDispatch();
   const contractTotal = useSelector((state) => state.contract.total);
   const contracts = useSelector((state) => state.contract.contracts);
@@ -61,7 +53,7 @@ function ContractManagement() {
         title: "Độc giả",
         dataIndex: "user",
         key: "user",
-        render: (item) => item.name,
+        render: (item) => item?.name || "Đã bị xóa",
       },
       {
         title: "Sách",
@@ -122,32 +114,52 @@ function ContractManagement() {
         fixed: "right",
         render: (item) => {
           let isRequesting = false;
+          let isPending = false;
           for (const c of contracts) {
             if (c._id == item) {
-              if (c.status == CONTRACTS.requesting.value) {
-                isRequesting = true;
-                break;
-              }
+              isRequesting = c.status == CONTRACTS.requesting.value;
+              isPending = c.status == CONTRACTS.pending.value;
+              break;
             }
           }
           return (
-            <Button
-              type="primary"
-              onClick={() => {
-                if (isRequesting) {
-                  dispatch(
-                    updateContract({
-                      id: item,
-                      body: { status: CONTRACTS.pending.value },
-                    })
-                  );
-                } else {
-                  openEditMode(item);
-                }
-              }}
-            >
-              {isRequesting ? "Chấp thuận" : "Trả sách"}
-            </Button>
+            <>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (isRequesting) {
+                    dispatch(
+                      updateContract({
+                        id: item,
+                        body: { status: CONTRACTS.pending.value },
+                      })
+                    );
+                  } else {
+                    openEditMode(item);
+                  }
+                }}
+              >
+                {(isRequesting && "Chấp thuận") ||
+                  (isPending && "Trả sách") ||
+                  "Cập nhật"}
+              </Button>
+              {isRequesting && (
+                <Button
+                  danger
+                  className="mt-1"
+                  onClick={() => {
+                    modal.confirm({
+                      content: "Bạn chắc chắn muốn từ chối",
+                      onOk: () => {
+                        dispatch(refuseRequest(item));
+                      },
+                    });
+                  }}
+                >
+                  Từ chối
+                </Button>
+              )}
+            </>
           );
         },
       },
@@ -181,6 +193,21 @@ function ContractManagement() {
           });
           dispatch(fetchContracts());
           setModalOpen(false);
+        }
+      }
+      if (lastAction == "refuseRequest") {
+        dispatch(setLastAction(null));
+        if (error) {
+          notification.error({
+            message: "Thông báo",
+            description: "Từ chối yêu cầu không thành không",
+          });
+        } else {
+          notification.success({
+            message: "Thông báo",
+            description: "Từ chối yêu cầu thành không",
+          });
+          dispatch(fetchContracts());
         }
       }
     }
@@ -239,10 +266,10 @@ function ContractManagement() {
           editContract={selectedContract}
         />
       </Modal>
-      <div className="p-2  overflow-x-scroll max-lg:w-[100vw]">
-        <div className="flex  justify-between   mb-2 w-full flex-wrap gap-1">
-          <span className="flex justify-start gap-2 max-lg:w-full  flex-wrap">
-            <span className="w-[20rem] max-lg:w-[95%]">
+      <div className="px-2 max-lg:pr-0 max-lg:w-[100vw] flex-1 flex flex-col h-[calc(100vh-45.5px)]">
+        <div className="flex  justify-between   mb-2 w-full flex-wrap gap-1 max-lg:justify-end pr-1">
+          <span className="flex justify-start gap-1 max-lg:w-full  flex-wrap">
+            <span className="w-[20rem] max-lg:w-full">
               <Input
                 placeholder="Tìm kiếm..."
                 value={keyword}
@@ -256,7 +283,7 @@ function ContractManagement() {
               value={status}
               options={statusOptions}
               allowClear
-              className="w-[20rem] max-lg:w-[95%]"
+              className="w-[20rem] max-lg:w-full"
               placeholder="Tình trạng"
               onChange={(value) => {
                 setStatus(value);
@@ -264,22 +291,24 @@ function ContractManagement() {
               }}
             />
           </span>
-          <AddButton
+          {/* <AddButton
             onClick={() => {
               setSelectedContract({});
               setEditMode("add");
               setModalOpen(true);
             }}
+          /> */}
+        </div>
+        <div className="overflow-x-scroll flex-1 ">
+          <Table
+            bordered
+            pagination={tableParams.pagination}
+            columns={columns}
+            dataSource={contractData}
+            onChange={handleTableChange}
+            loading={loading}
           />
         </div>
-        <Table
-          bordered
-          pagination={tableParams.pagination}
-          columns={columns}
-          dataSource={contractData}
-          onChange={handleTableChange}
-          loading={loading}
-        />
       </div>
     </>
   );

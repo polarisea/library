@@ -43,7 +43,7 @@ function Profile() {
   }, [userId]);
 
   useEffect(() => {
-    dispatch(fetchUser(userId));
+    if (userId) dispatch(fetchUser(userId));
   }, [userId]);
 
   useEffect(() => {
@@ -209,7 +209,7 @@ function Profile() {
           </div>
           <div className=" w-full">
             <p className="font-semibold w-full border-b border-gray-400">
-              Lịch sử - {user?.contracts} lượt mượn
+              Lịch sử
             </p>
             <ContractHistory user={userId} removedColumns={["user"]} />
           </div>

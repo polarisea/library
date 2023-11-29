@@ -33,6 +33,10 @@ const items = [
     <NavLink to="/dashboard/contract-management">Mượn & trả sách</NavLink>,
     "contract-management"
   ),
+  getItem(
+    <NavLink to="/dashboard/notify-management">Quản lý thông báo</NavLink>,
+    "notify-management"
+  ),
 ];
 
 function LeftSidebar({ setSlideOpen }) {

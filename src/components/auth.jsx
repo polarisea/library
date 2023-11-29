@@ -32,6 +32,17 @@ function Auth({ open: isModalOpen, setOpen: setIsModalOpen }) {
         }
         setLastAction(null);
       }
+      if (lastAction == "register") {
+        if (error) {
+          notification.error({
+            message: "Thông báo",
+            description: "Đăng ký thất bại",
+            placement: "topRight",
+          });
+        } else {
+        }
+        setLastAction(null);
+      }
     }
   }, [loading]);
 
@@ -204,7 +215,7 @@ function Auth({ open: isModalOpen, setOpen: setIsModalOpen }) {
         ),
       },
     ];
-  }, []);
+  }, [loading]);
 
   function onLoginByPassword(values) {
     dispatch(
@@ -259,7 +270,14 @@ function Auth({ open: isModalOpen, setOpen: setIsModalOpen }) {
       }}
       footer={null}
     >
-      <Tabs defaultActiveKey="1" items={tabItems} centered size="large" />
+      {/* <Tabs defaultActiveKey="1" items={tabItems} centered size="large" /> */}
+      <h1 className="text-[1.25rem] font-semibold mb-5">
+        Kết nối với chúng tôi bằng?
+      </h1>
+      <span className="flex flex-col items-center justify-center gap-2">
+        <LoginFacebookBtn callback={onLoginByFacebook} />
+        <LoginGoogleBtn callback={onLoginByGoogle} />
+      </span>
     </Modal>
   );
 }

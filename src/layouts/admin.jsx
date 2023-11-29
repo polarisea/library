@@ -16,11 +16,11 @@ function AdminLayout({ children }) {
         <LeftSidebar setSlideOpen={setSlideOpen} />
       </span>
       <div
-        className={`flex-1 h-[100vh] lg:w-[calc(100vw-256px)] mt-2 px-2 relative animate-left  ${
+        className={`flex-1 h-[100vh] lg:w-[calc(100vw-256px)]   relative animate-left flex flex-col  ${
           slideOpen ? "max-lg:left-[0]" : "max-lg:left-[-256px]"
         }`}
       >
-        <div className="flex justify-between items-center px-2">
+        <div className="flex justify-between items-center px-2 my-1">
           <span className="lg:hidden">
             <Button
               icon={<MenuOutlined />}
@@ -29,7 +29,7 @@ function AdminLayout({ children }) {
               }}
             ></Button>
           </span>
-          <h1 className="text-[1.75rem] font-semibold  mx-5 max-lg:hidden">
+          <h1 className="text-[1.75rem] font-semibold   max-lg:hidden">
             Chào mừng trở lại
           </h1>
           <NavLink to="/">

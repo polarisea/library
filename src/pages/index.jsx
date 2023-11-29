@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Tabs, ConfigProvider } from "antd";
 
@@ -21,9 +20,7 @@ import {
 
 const tabTokens = {
   cardBg: "rgba(0, 0, 0, 0)",
-  // itemSelectedColor: "#66FFC8",
   titleFontSize: 17,
-  // itemColor: "rgba(255,255,255,255)",
   colorBorder: "rgba(0, 0, 0, 0)",
   colorBgContainer: "rgba(0,0,0,0)",
   colorBorderSecondary: "rgba(0,0,0,0)",

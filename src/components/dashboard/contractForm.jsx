@@ -62,7 +62,7 @@ function ContractFrom({ closeModal, mode, editContract }) {
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
   const [returnDate, setReturnDate] = useState(null);
-  const [returnBookStatus, setReturnBookStatus] = useState({});
+  const [returnBookStatus, setReturnBookStatus] = useState();
   const [violationCost, setViolationCost] = useState(0);
 
   const [isFinePaid, setIsFinePaid] = useState(false);
@@ -74,10 +74,10 @@ function ContractFrom({ closeModal, mode, editContract }) {
     if (returnDate) {
       differentDay = calculateDayDifference(editContract.to, returnDate);
       if (differentDay > 0)
-        total += editContract.book.lateReturnFine * differentDay;
+        total += editContract?.book?.lateReturnFine * differentDay;
     }
     if (returnBookStatus == 1) {
-      total += editContract.book.damagedBookFine;
+      total += editContract?.book?.damagedBookFine;
     }
 
     setViolationCost(total);
@@ -98,6 +98,7 @@ function ContractFrom({ closeModal, mode, editContract }) {
       if (Object.keys(editContract).length > 0) {
         setReturnDate(editContract.returnDate);
         setReturnBookStatus(editContract.returnBookStatus);
+        console.log("Haha: ", editContract.returnBookStatus);
         setViolationCost(editContract.violationCost);
         setIsFinePaid(editContract.isFinePaid);
       }
@@ -314,6 +315,7 @@ function ContractFrom({ closeModal, mode, editContract }) {
               returnDate: editContract.returnDate
                 ? moment(editContract.returnDate)
                 : null,
+              bookStatus: editContract.returnBookStatus,
             }}
           >
             <Form.Item label="Độc giả">
@@ -331,11 +333,15 @@ function ContractFrom({ closeModal, mode, editContract }) {
             <Form.Item label="Ngày trả thực tế" name="returnDate">
               <DatePicker format={"DD/MM/YYYY"} onChange={onDateChange} />
             </Form.Item>
-            <Form.Item label="Tình trạng sách" name="status" className="mt-1">
+            <Form.Item
+              label="Tình trạng sách"
+              name="bookStatus"
+              className="mt-1"
+            >
               <Select
-                defaultValue={0}
                 value={returnBookStatus}
                 onChange={(e) => {
+                  console.log(e);
                   setReturnBookStatus(e);
                 }}
                 options={[

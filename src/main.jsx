@@ -21,6 +21,9 @@ const BookManagement = React.lazy(() =>
 const ContractManagement = React.lazy(() =>
   import("./components/dashboard/contractManagement")
 );
+const NotifyManagement = React.lazy(() =>
+  import("./components/dashboard/notifyManagement")
+);
 
 const router = createBrowserRouter([
   {
@@ -37,6 +40,10 @@ const router = createBrowserRouter([
       {
         path: "/dashboard/contract-management",
         element: <ContractManagement />,
+      },
+      {
+        path: "/dashboard/notify-management",
+        element: <NotifyManagement />,
       },
     ],
   },

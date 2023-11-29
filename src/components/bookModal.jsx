@@ -11,7 +11,7 @@ import {
   DatePicker,
   Modal,
   Tag,
-  notification,
+  Badge,
 } from "antd";
 
 import { vnDate } from "../utils/date";
@@ -25,10 +25,15 @@ import {
   fetchBooks,
   fetchTotal,
 } from "../slices/book";
-import { DEFAULT_COVER_URL } from "../constants";
+import { CONTRACTS, DEFAULT_COVER_URL } from "../constants";
 
 import { setTab } from "../slices/homeSlice";
-import { createContract, setLastAction } from "../slices/contract";
+import {
+  createContract,
+  setLastAction,
+  fetchContract,
+  cancelRequest,
+} from "../slices/contract";
 
 const { RangePicker } = DatePicker;
 const tabTokens = {
@@ -42,12 +47,13 @@ const tabTokens = {
 };
 
 function BookModal({ book, closeModal }) {
-  const { notification } = App.useApp();
+  const { notification, modal } = App.useApp();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.contract.loading);
   const lastAction = useSelector((state) => state.contract.lastAction);
   const error = useSelector((state) => state.contract.error);
+  const contract = useSelector((state) => state.contract.contract);
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState(null);
   const [to, setTo] = useState(null);
@@ -64,11 +70,43 @@ function BookModal({ book, closeModal }) {
           key: "createdAt",
           label: "Lịch sử",
           children: (
-            <ContractHistory book={book._id} removedColumns={["book"]} />
+            <ContractHistory
+              book={book._id}
+              removedColumns={["book"]}
+              closeBookModal={closeModal}
+            />
           ),
         },
       ]
     );
+  }, [book]);
+
+  const badgeContent = useMemo(() => {
+    if (contract) {
+      if (contract.status == CONTRACTS.requesting.value) return "Đang yêu cầu";
+      if (contract.status == CONTRACTS.pending.value) return "Đang hoạt động";
+      if (contract.status == CONTRACTS.violation.value) return "Vi phạm";
+    }
+    return "";
+  }, [contract]);
+
+  const badgeStatus = useMemo(() => {
+    if (contract) {
+      if (contract.status == CONTRACTS.requesting.value) return "blue";
+      if (contract.status == CONTRACTS.pending.value) return "green";
+      if (contract.status == CONTRACTS.violation.value) return "red";
+    }
+    return "";
+  }, [contract]);
+
+  useEffect(() => {
+    if (user)
+      dispatch(
+        fetchContract({
+          book: book._id,
+          user: user._id,
+        })
+      );
   }, [book]);
 
   useEffect(() => {
@@ -86,6 +124,20 @@ function BookModal({ book, closeModal }) {
             description: "Đặt lịch hẹn thành không (chờ duyệt)",
           });
           setOpen(false);
+        }
+      }
+      if (lastAction == "cancelRequest") {
+        dispatch(setLastAction(null));
+        if (error) {
+          notification.error({
+            message: "Thông báo",
+            description: "Hủy yêu cầu không thành không",
+          });
+        } else {
+          notification.success({
+            message: "Thông báo",
+            description: "Hủy yêu cầu thành không",
+          });
         }
       }
     }
@@ -154,25 +206,31 @@ function BookModal({ book, closeModal }) {
     );
   }
 
+  function onCancleRequesting() {
+    dispatch(cancelRequest(contract._id));
+  }
+
   return (
     <>
       <div className="w-full  bg-white p-2 flex mb-2 flex-wrap justify-center">
-        <div className="w-[10rem] h-[14rem] relative">
-          <img
-            src={book.cover ? book.cover : DEFAULT_COVER_URL}
-            className="h-full w-full"
-            alt=""
-          />
-          <span
-            className="absolute w-full  text-center font-semibold text-[1rem] bottom-0 text-white"
-            style={{
-              backgroundColor:
-                book.borrowedCount < book.count ? "green" : "red",
-            }}
-          >
-            {book.borrowedCount < book.count ? "Sẵn sàng" : "Hết sách"}
-          </span>
-        </div>
+        <Badge.Ribbon text={badgeContent} placement="start" color={badgeStatus}>
+          <div className="w-[10rem] h-[14rem] relative">
+            <img
+              src={book.cover ? book.cover : DEFAULT_COVER_URL}
+              className="h-full w-full"
+              alt=""
+            />
+            <span
+              className="absolute w-full  text-center font-semibold text-[1rem] bottom-0 text-white"
+              style={{
+                backgroundColor:
+                  book.borrowedCount < book.count ? "green" : "red",
+              }}
+            >
+              {book.borrowedCount < book.count ? "Sẵn sàng" : "Hết sách"}
+            </span>
+          </div>
+        </Badge.Ribbon>
 
         <div className="flex  flex-1 flex-col px-2 justify-between">
           <ConfigProvider
@@ -245,14 +303,35 @@ function BookModal({ book, closeModal }) {
               </Descriptions.Item>
             </Descriptions>
           </ConfigProvider>
-          <Button
-            className="remove-all"
-            type="primary"
-            onClick={() => setOpen(true)}
-            disabled={user && book.borrowedCount < book.count ? false : true}
-          >
-            Đặt lịch mượn
-          </Button>
+
+          {contract?.status == CONTRACTS.requesting.value ? (
+            <Button
+              danger
+              onClick={() => {
+                modal.confirm({
+                  content: "Bạn chắc chắn muốn hủy yêu cầu",
+                  onOk: onCancleRequesting,
+                  confirmLoading: loading,
+                });
+              }}
+            >
+              Hủy yêu cầu
+            </Button>
+          ) : (
+            <Button
+              type="primary"
+              onClick={() => setOpen(true)}
+              disabled={
+                user &&
+                book.borrowedCount < book.count &&
+                (!contract || contract?.status == CONTRACTS.finished.value)
+                  ? false
+                  : true
+              }
+            >
+              Đặt lịch mượn
+            </Button>
+          )}
 
           <Modal
             title="Chọn thời gian"

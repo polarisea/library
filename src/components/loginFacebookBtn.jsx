@@ -12,7 +12,7 @@ function LoginGoogleButton({ callback }) {
         }
         callback(null);
       },
-      { scope: "email, public_profile" },
+      { scope: "email, public_profile" }
     );
   }
 
@@ -20,9 +20,10 @@ function LoginGoogleButton({ callback }) {
     <button
       type="button"
       onClick={onClick}
-      className="w-[39px] h-[39px] border-[1px] border-[#dadce0] rounded-[4px]"
+      className=" h-[39px] border-[1px] border-[#dadce0] rounded-[4px] pl-2 pr-8 flex items-center"
     >
       <FacebookFilled style={{ fontSize: "1.5rem", color: "blue" }} />
+      <span className="ml-2"> Đăng nhập bằng Facebook</span>
     </button>
   );
 }

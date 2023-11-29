@@ -34,11 +34,11 @@ function Book({ book }) {
           }}
         ></BookModal>
       </Modal>
-      <div
-        className="w-full h-[15rem] bg-white shadow-lg p-2 flex mb-5"
-        onClick={showModal}
-      >
-        <div className="w-[10rem] h-[14rem]    relative">
+      <div className="w-full h-[15rem] bg-white shadow-lg p-2 flex mb-5">
+        <div
+          className="w-[10rem] h-[14rem]  cursor-pointer relative"
+          onClick={showModal}
+        >
           <img
             src={book.cover ? book.cover : DEFAULT_COVER_URL}
             className="h-full w-full"
@@ -55,7 +55,12 @@ function Book({ book }) {
           </span>
         </div>
         <div className="flex  flex-1 flex-col px-2 text-[1rem]">
-          <p className="font-bold text-[1.25rem]">{book.name}</p>
+          <p
+            className="font-bold text-[1.25rem] cursor-pointer hover:text-blue-700"
+            onClick={showModal}
+          >
+            {book.name}
+          </p>
           <p>
             <EditOutlined /> &nbsp; <span>{book.authors.join(", ")}</span>
           </p>
